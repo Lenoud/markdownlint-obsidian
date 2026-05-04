@@ -9,6 +9,7 @@ sources:
   - https://github.com/DavidAnson/vscode-markdownlint/tree/main/test
   - https://github.com/DavidAnson/vscode-markdownlint/blob/main/test/metadata-test.mjs
   - https://github.com/DavidAnson/vscode-markdownlint/blob/main/test/stringify-error-test.mjs
+  - https://github.com/DavidAnson/vscode-markdownlint/blob/main/test-ui/tests.cjs
   - https://github.com/DavidAnson/vscode-markdownlint/blob/main/package.json
 ---
 
@@ -93,6 +94,21 @@ and error-like objects into predictable multiline text.
 
 Each `stringify-error` test has `t.plan(1)` and compares the complete formatted
 string with `t.assert.equal`.
+
+## VS Code UI Smoke Coverage
+
+The `test-ui/tests.cjs` smoke suite exercises selected extension-host behavior.
+It is not a complete functional test catalog, but it provides direct evidence
+for several user-facing flows:
+
+| Test helper | Covered behavior |
+|---|---|
+| `openLintEditVerifyFixAll` | Opens `README.md`, creates `MD019` and `MD012`, verifies diagnostic code, target, message, range, severity, source, then runs `markdownlint.fixAll`. |
+| `openLintEditCloseClean` | Opens `README.md`, creates diagnostics, closes the active editor, and verifies diagnostics are cleaned up. |
+| `addNonDefaultViolation` | Adds a non-default `MD054` violation and verifies the diagnostic appears. |
+| `openEditDiffRevert` | Edits and saves `CHANGELOG.md`, opens a Git diff view, undoes changes, saves, and closes editors. |
+| `dynamicWorkspaceSettingsChange` | Updates workspace `markdownlint.customRules`, verifies custom-rule diagnostics appear, then removes the setting. |
+| `lintWorkspace` | Runs `markdownlint.lintWorkspace` and verifies the expected VS Code terminal is opened. |
 
 ## Notes For Flavor Grenade
 

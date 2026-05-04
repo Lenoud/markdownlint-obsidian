@@ -13,6 +13,8 @@ sources:
 
 # Fixes And Formatting
 
+## Markdownlint.CodeActions
+
 ```text
 Tag: Markdownlint.CodeActions
 Gist: Provide Markdown quick fixes, fix-all actions, rule information actions, and configuration information actions.
@@ -25,6 +27,10 @@ Stakeholders: Markdown authors.
 Owner: vscode-markdownlint extension.
 Source: `extension.mjs` `provideCodeActions`.
 ```
+
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
+
+## Markdownlint.FixLine
 
 ```text
 Tag: Markdownlint.FixLine
@@ -39,6 +45,10 @@ Owner: vscode-markdownlint extension.
 Source: `extension.mjs` `fixLine`; `markdownlint-cli2/markdownlint` `applyFix`.
 ```
 
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
+
+## Markdownlint.FixAll
+
 ```text
 Tag: Markdownlint.FixAll
 Gist: Apply all supported markdownlint fixes in the active Markdown document, optionally filtered by rule.
@@ -52,6 +62,10 @@ Owner: vscode-markdownlint extension.
 Source: `extension.mjs` `fixAll`; README `Fix`.
 ```
 
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
+
+## Markdownlint.RangeFormatting
+
 ```text
 Tag: Markdownlint.RangeFormatting
 Gist: Register Markdown range formatting that applies markdownlint fixes within the requested range.
@@ -64,3 +78,5 @@ Stakeholders: Markdown authors, VS Code users.
 Owner: vscode-markdownlint extension.
 Source: `extension.mjs` `formatDocument` and `registerDocumentRangeFormattingEditProvider`; README `Fix`.
 ```
+
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]

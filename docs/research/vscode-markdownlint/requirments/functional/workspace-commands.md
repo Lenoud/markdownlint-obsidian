@@ -14,6 +14,8 @@ sources:
 
 # Workspace Commands
 
+## Markdownlint.WorkspaceLint
+
 ```text
 Tag: Markdownlint.WorkspaceLint
 Gist: Lint all configured Markdown workspace files through a VS Code task.
@@ -26,6 +28,10 @@ Stakeholders: Markdown authors, repository maintainers.
 Owner: vscode-markdownlint extension.
 Source: `extension.mjs` `LintWorkspacePseudoterminal`, `lintWorkspace`, `lintWorkspaceViaTask`, task provider registration; `package.json` task definition and problem matcher; README `Workspace`.
 ```
+
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
+
+## Markdownlint.OpenConfigFile
 
 ```text
 Tag: Markdownlint.OpenConfigFile
@@ -40,6 +46,10 @@ Owner: vscode-markdownlint extension.
 Source: `extension.mjs` `openConfigFile`; README `Configure`.
 ```
 
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
+
+## Markdownlint.ToggleLinting
+
 ```text
 Tag: Markdownlint.ToggleLinting
 Gist: Temporarily toggle markdownlint diagnostics for the current extension session.
@@ -53,6 +63,10 @@ Owner: vscode-markdownlint extension.
 Source: `extension.mjs` `toggleLinting`, `clearDiagnosticsAndLintVisibleFiles`, `lint`; README `Disable`.
 ```
 
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
+
+## Markdownlint.ConfigurationWatchers
+
 ```text
 Tag: Markdownlint.ConfigurationWatchers
 Gist: Re-lint visible files when markdownlint configuration or options files change.
@@ -65,3 +79,5 @@ Stakeholders: Markdown authors, workspace maintainers.
 Owner: vscode-markdownlint extension.
 Source: `extension.mjs` `createFileSystemWatchers`, `disposeFileSystemWatchers`, `didChangeWorkspaceFolders`, `clearDiagnosticsAndLintVisibleFiles`; README `Configure`.
 ```
+
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]

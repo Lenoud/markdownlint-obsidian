@@ -14,6 +14,8 @@ sources:
 
 # Test-Derived Requirements
 
+## Markdownlint.ErrorSerialization
+
 ```text
 Tag: Markdownlint.ErrorSerialization
 Gist: Serialize thrown values and nested errors into deterministic output text.
@@ -27,6 +29,10 @@ Owner: vscode-markdownlint extension.
 Source: `test/stringify-error-test.mjs`; `stringify-error.mjs`; `extension.mjs` error handling in `markdownlintWrapper` and `lintWorkspace`.
 ```
 
+Test trace: [[research/vscode-markdownlint/tests/index#test/stringify-error-test.mjs|stringify-error unit tests]]
+
+## Markdownlint.MetadataConsistency
+
 ```text
 Tag: Markdownlint.MetadataConsistency
 Gist: Keep package, README, changelog, and schema version references consistent with installed markdownlint packages.
@@ -39,3 +45,5 @@ Stakeholders: Markdown authors, extension maintainers, release maintainers.
 Owner: vscode-markdownlint extension.
 Source: `test/metadata-test.mjs`.
 ```
+
+Test trace: [[research/vscode-markdownlint/tests/index#test/metadata-test.mjs|metadata unit test]]

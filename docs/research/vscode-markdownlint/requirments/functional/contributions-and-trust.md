@@ -14,6 +14,8 @@ sources:
 
 # Contributions And Trust
 
+## Markdownlint.ManifestContributions
+
 ```text
 Tag: Markdownlint.ManifestContributions
 Gist: Contribute commands, menus, task definitions, problem matchers, configuration, snippets, and schema validation to VS Code.
@@ -26,6 +28,10 @@ Stakeholders: Markdown authors, VS Code users, extension maintainers.
 Owner: vscode-markdownlint extension.
 Source: `package.json` `contributes`.
 ```
+
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
+
+## Markdownlint.SchemaValidation
 
 ```text
 Tag: Markdownlint.SchemaValidation
@@ -40,6 +46,10 @@ Owner: vscode-markdownlint extension.
 Source: `package.json` `jsonValidation` and `yamlValidation`.
 ```
 
+Test trace: [[research/vscode-markdownlint/tests/index#test/metadata-test.mjs|metadata unit test]]
+
+## Markdownlint.Snippets
+
 ```text
 Tag: Markdownlint.Snippets
 Gist: Provide Markdown snippets for inline markdownlint suppression and configuration comments.
@@ -52,6 +62,10 @@ Stakeholders: Markdown authors.
 Owner: vscode-markdownlint extension.
 Source: `package.json` snippet contribution; `snippets.json`; README `Snippets`.
 ```
+
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
+
+## Markdownlint.WorkspaceTrust
 
 ```text
 Tag: Markdownlint.WorkspaceTrust
@@ -66,6 +80,10 @@ Owner: vscode-markdownlint extension.
 Source: `package.json` `capabilities`; `extension.mjs` `getNoImport`; README `Security`.
 ```
 
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
+
+## Markdownlint.FileSystemAdapter
+
 ```text
 Tag: Markdownlint.FileSystemAdapter
 Gist: Present VS Code workspace file systems to markdownlint-cli2 through a Node-like `fs` adapter.
@@ -78,3 +96,5 @@ Stakeholders: Markdown authors, remote workspace users, extension maintainers.
 Owner: vscode-markdownlint extension.
 Source: `extension.mjs` `FsWrapper`, `FsNull`, `markdownlintWrapper`.
 ```
+
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]

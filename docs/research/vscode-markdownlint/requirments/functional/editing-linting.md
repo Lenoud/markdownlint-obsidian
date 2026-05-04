@@ -14,6 +14,8 @@ sources:
 
 # Editing And Linting
 
+## Markdownlint.Activation
+
 ```text
 Tag: Markdownlint.Activation
 Gist: Activate the extension when a Markdown document is used.
@@ -26,6 +28,10 @@ Stakeholders: Markdown authors, VS Code users, extension maintainers.
 Owner: vscode-markdownlint extension.
 Source: `package.json` activation event `onLanguage:markdown`; `extension.mjs` `activate`.
 ```
+
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
+
+## Markdownlint.DocumentEligibility
 
 ```text
 Tag: Markdownlint.DocumentEligibility
@@ -40,6 +46,10 @@ Owner: vscode-markdownlint extension.
 Source: `extension.mjs` `isMarkdownDocument`.
 ```
 
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
+
+## Markdownlint.LintTrigger
+
 ```text
 Tag: Markdownlint.LintTrigger
 Gist: Run linting on the configured editor lifecycle events.
@@ -52,6 +62,10 @@ Stakeholders: Markdown authors, VS Code users.
 Owner: vscode-markdownlint extension.
 Source: `extension.mjs` `didOpenTextDocument`, `didChangeTextDocument`, `didSaveTextDocument`, `didCloseTextDocument`, `didChangeVisibleTextEditors`, `didChangeActiveTextEditor`, `didChangeTextEditorSelection`, `didChangeConfiguration`, `didGrantWorkspaceTrust`.
 ```
+
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
+
+## Markdownlint.ConfigurationResolution
 
 ```text
 Tag: Markdownlint.ConfigurationResolution
@@ -66,6 +80,10 @@ Owner: vscode-markdownlint extension.
 Source: `extension.mjs` `getConfig`, `getConfigFileArguments`, `getCustomRules`, `getOptionsDefault`; README configuration section.
 ```
 
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
+
+## Markdownlint.Diagnostics
+
 ```text
 Tag: Markdownlint.Diagnostics
 Gist: Convert markdownlint results into VS Code diagnostics.
@@ -79,6 +97,10 @@ Owner: vscode-markdownlint extension.
 Source: `extension.mjs` `lint`, `getDiagnosticSeverity`, `markdownlintWrapper`.
 ```
 
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
+
+## Markdownlint.FocusMode
+
 ```text
 Tag: Markdownlint.FocusMode
 Gist: Suppress diagnostics near the active cursor when focus mode is enabled.
@@ -91,3 +113,5 @@ Stakeholders: Markdown authors.
 Owner: vscode-markdownlint extension.
 Source: `extension.mjs` `lint`, `didChangeActiveTextEditor`, `didChangeTextEditorSelection`; README `markdownlint.focusMode`.
 ```
+
+Test trace: [[research/vscode-markdownlint/tests/index#VS Code UI Smoke Coverage|VS Code UI smoke coverage]]
