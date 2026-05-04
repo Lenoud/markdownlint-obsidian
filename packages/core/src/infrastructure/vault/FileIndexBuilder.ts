@@ -13,12 +13,17 @@ import * as path from "node:path";
 import { globby } from "globby";
 import type { VaultIndex } from "../../domain/vault/VaultIndex.js";
 import { makeVaultPath, type VaultPath } from "../../domain/vault/VaultPath.js";
-import { matchWikilink, type MatchResult } from "../../domain/vault/WikilinkMatcher.js";
+import {
+  matchWikilink,
+  type MatchResult,
+  type ResolveMode,
+} from "../../domain/vault/WikilinkMatcher.js";
 import type { WikilinkNode } from "../../domain/parsing/WikilinkNode.js";
 
 export interface BuildOptions {
   readonly caseSensitive: boolean;
   readonly ignores?: readonly string[];
+  readonly resolveMode?: ResolveMode;
 }
 
 /**
@@ -48,6 +53,9 @@ export async function buildFileIndex(
     all: () => paths,
     has: (relative: string) => byRelative.has(relative),
     resolve: (link: Pick<WikilinkNode, "target">): MatchResult =>
-      matchWikilink(link.target, paths, { caseSensitive: options.caseSensitive }),
+      matchWikilink(link.target, paths, {
+        caseSensitive: options.caseSensitive,
+        ...(options.resolveMode !== undefined && { resolveMode: options.resolveMode }),
+      }),
   });
 }

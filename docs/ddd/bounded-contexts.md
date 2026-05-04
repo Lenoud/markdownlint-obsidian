@@ -27,13 +27,14 @@ Three bounded contexts. Dependencies are acyclic and explicit.
 
 ## Context: Vault
 
-**Responsibility:** Build an index of all vault files and resolve wikilink targets.
+**Responsibility:** Build an index of all vault files and resolve wikilink targets
+using the configured wikilink resolution mode.
 
 **Owns:** `VaultIndex`, `VaultPath`, `VaultDetector`, all `*Node` parse types.
 
 **Does not know about:** rule implementations, config cascade.
 
-**Public interface:** `VaultIndex.resolve(wikilink: WikilinkNode): VaultPath | null`
+**Public interface:** `VaultIndex.resolve(wikilink: Pick<WikilinkNode, "target">): MatchResult`
 
 ## Context: Linting
 

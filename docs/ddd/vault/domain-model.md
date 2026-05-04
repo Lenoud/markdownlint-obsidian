@@ -30,17 +30,49 @@ interface WikilinkNode {
 }
 ```
 
+### MatchResult
+
+Immutable. The outcome of resolving a wikilink target against the vault index.
+
+```typescript
+type MatchResult =
+  | {
+      kind: "resolved";
+      path: VaultPath;
+      strategy: "exact" | "case-insensitive" | "path-suffix" | "basename";
+    }
+  | { kind: "ambiguous"; candidates: readonly VaultPath[] }
+  | { kind: "not-found" };
+```
+
 ## Domain Service
 
 ### VaultIndex
 
-Built once per LintRun. Resolves wikilink targets to VaultPaths using Obsidian's
-own resolution logic: exact match first, then case-insensitive, then basename-only.
+Built once per LintRun. Resolves wikilink targets to VaultPaths with a
+configured resolution mode.
+
+`path-relative` mode uses the behavior shipped through 1.0.x:
+
+1. Exact path match.
+2. Case-insensitive path match when `wikilinks.caseSensitive` is `false`.
+3. Basename match.
+
+`obsidian-fuzzy` mode adds a path-suffix step before basename matching:
+
+1. Exact path match.
+2. Case-insensitive path match when `wikilinks.caseSensitive` is `false`.
+3. Path-suffix match for path-like targets such as `sources/foo`.
+4. Basename match for bare targets such as `foo`.
+
+The path-suffix step only applies when the target contains `/`. This keeps
+bare wikilinks on the basename strategy while still allowing folder-implicit
+targets like `[[sources/foo]]` to resolve to `wiki/sources/foo.md`.
 
 ```typescript
 interface VaultIndex {
-  /** Resolve a wikilink target to a VaultPath, or null if not found. */
-  resolve(wikilink: WikilinkNode): VaultPath | null;
+  /** Resolve a wikilink target to a concrete match, ambiguity, or miss. */
+  resolve(wikilink: Pick<WikilinkNode, "target">): MatchResult;
   /** All .md files in the vault. */
   all(): readonly VaultPath[];
 }

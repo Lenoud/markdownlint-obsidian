@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `wikilinks.resolveMode` config option (`"path-relative"` default,
+  `"obsidian-fuzzy"` opt-in). The fuzzy mode adds a path-suffix step to
+  wikilink resolution, mirroring Obsidian's own algorithm so vaults that
+  mix vault-absolute (`[[raw/upnote/Note]]`) and folder-implicit
+  (`[[sources/foo]]`) link styles resolve correctly without splitting them
+  across two lint runs. Multiple suffix matches are reported as ambiguous
+  (OFM004) instead of arbitrary picking. Closes #27.
+
 ### Fixed
 
 - `StandardRuleAdapter` no longer crashes with
@@ -16,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cannot represent line removal, so the adapter now surfaces the
   underlying violation without an attached fix instead of throwing
   through `LintUseCase`. Closes #28.
+
+### Tests
+
+- Added integration regression test (`tests/integration/regression/issue-26-md028-callout.test.ts`)
+  exercising the full lint pipeline against a multi-paragraph callout — pins
+  the existing default-disable wiring so a future change to `OFM_MD_CONFLICTS`
+  or `extractMdConfig` cannot silently re-introduce the issue #26 false-positive.
 
 ## [1.0.2] - 2026-04-18
 

@@ -20,6 +20,11 @@ Then("error {word} is reported", function (this: OFMWorld, code: string) {
   assert.ok(output.includes(code), `expected output to contain "${code}"`);
 });
 
+Then("error {word} is not reported", function (this: OFMWorld, code: string) {
+  const output = (this.cliResult?.stdout ?? "") + (this.cliResult?.stderr ?? "");
+  assert.ok(!output.includes(code), `expected output not to contain "${code}"`);
+});
+
 // Phase 4 vault-detection scenarios assert the detected root path. We
 // verify indirectly: lint ran without OFM900 (exit != 2) and an OFM001
 // report or clean exit indicates detection succeeded.

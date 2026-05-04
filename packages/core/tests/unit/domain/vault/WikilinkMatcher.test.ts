@@ -75,3 +75,119 @@ describe("matchWikilink", () => {
     expect(matchWikilink("", all, { caseSensitive: false }).kind).toBe("not-found");
   });
 });
+
+describe("matchWikilink — obsidian-fuzzy resolveMode (issue #27)", () => {
+  const ROOT_M = path.resolve("/m");
+  const WIKI_SOURCES_FOO = makeVaultPath(ROOT_M, path.resolve("/m/wiki/sources/foo.md"));
+  const RAW_OTHER = makeVaultPath(ROOT_M, path.resolve("/m/raw/upnote/Other.md"));
+  const SUPER_FOO = makeVaultPath(ROOT_M, path.resolve("/m/super-sources/foo.md"));
+  const ALSO_SOURCES_FOO = makeVaultPath(ROOT_M, path.resolve("/m/other/sources/foo.md"));
+
+  it("path-suffix match: [[sources/foo]] resolves to wiki/sources/foo.md", () => {
+    const r = matchWikilink("sources/foo", [WIKI_SOURCES_FOO, RAW_OTHER], {
+      caseSensitive: false,
+      resolveMode: "obsidian-fuzzy",
+    });
+    expect(r.kind).toBe("resolved");
+    if (r.kind === "resolved") {
+      expect(r.path).toBe(WIKI_SOURCES_FOO);
+      expect(r.strategy).toBe("path-suffix");
+    }
+  });
+
+  it("path-suffix only matches on / boundaries (super-sources/foo does not match)", () => {
+    const r = matchWikilink("sources/foo", [SUPER_FOO], {
+      caseSensitive: false,
+      resolveMode: "obsidian-fuzzy",
+    });
+    expect(r.kind).toBe("not-found");
+  });
+
+  it("path-suffix reports ambiguous when multiple files end with the suffix", () => {
+    const r = matchWikilink("sources/foo", [WIKI_SOURCES_FOO, ALSO_SOURCES_FOO], {
+      caseSensitive: false,
+      resolveMode: "obsidian-fuzzy",
+    });
+    expect(r.kind).toBe("ambiguous");
+    if (r.kind === "ambiguous") {
+      expect(r.candidates.length).toBe(2);
+    }
+  });
+
+  it("vault-absolute links still resolve via exact match in fuzzy mode", () => {
+    const r = matchWikilink("wiki/sources/foo", [WIKI_SOURCES_FOO, RAW_OTHER], {
+      caseSensitive: false,
+      resolveMode: "obsidian-fuzzy",
+    });
+    expect(r.kind).toBe("resolved");
+    if (r.kind === "resolved") {
+      expect(r.strategy).toBe("exact");
+    }
+  });
+
+  it("path-relative mode (default) does not perform path-suffix matching", () => {
+    const r = matchWikilink("sources/foo", [WIKI_SOURCES_FOO], {
+      caseSensitive: false,
+      // resolveMode omitted — should behave as "path-relative"
+    });
+    // Falls through to basename which won't match because target has a slash.
+    expect(r.kind).toBe("not-found");
+  });
+
+  it("falls through to basename when no path-suffix match exists", () => {
+    const BARE = makeVaultPath(ROOT_M, path.resolve("/m/wiki/foo.md"));
+    const r = matchWikilink("foo", [BARE, WIKI_SOURCES_FOO], {
+      caseSensitive: false,
+      resolveMode: "obsidian-fuzzy",
+    });
+    // Two basename candidates → ambiguous (the fuzzy step found nothing
+    // because "foo" without a slash isn't a suffix-with-boundary match).
+    expect(r.kind).toBe("ambiguous");
+  });
+
+  it("bare targets keep the basename strategy in fuzzy mode", () => {
+    const BARE = makeVaultPath(ROOT_M, path.resolve("/m/wiki/foo.md"));
+    for (const target of ["foo", "foo.md"]) {
+      const r = matchWikilink(target, [BARE], {
+        caseSensitive: false,
+        resolveMode: "obsidian-fuzzy",
+      });
+      expect(r.kind).toBe("resolved");
+      if (r.kind === "resolved") {
+        expect(r.strategy).toBe("basename");
+      }
+    }
+  });
+
+  it("bare targets remain ambiguous by basename in fuzzy mode", () => {
+    const A = makeVaultPath(ROOT_M, path.resolve("/m/wiki/foo.md"));
+    const B = makeVaultPath(ROOT_M, path.resolve("/m/archive/foo.md"));
+    const r = matchWikilink("foo", [A, B], {
+      caseSensitive: false,
+      resolveMode: "obsidian-fuzzy",
+    });
+    expect(r.kind).toBe("ambiguous");
+    if (r.kind === "ambiguous") {
+      expect(r.candidates).toEqual([A, B]);
+    }
+  });
+
+  it("case-insensitive path-suffix match", () => {
+    const r = matchWikilink("Sources/FOO", [WIKI_SOURCES_FOO], {
+      caseSensitive: false,
+      resolveMode: "obsidian-fuzzy",
+    });
+    expect(r.kind).toBe("resolved");
+    if (r.kind === "resolved") {
+      expect(r.strategy).toBe("path-suffix");
+    }
+  });
+
+  it("case-sensitive path-suffix rejects mismatched case", () => {
+    const r = matchWikilink("Sources/FOO", [WIKI_SOURCES_FOO], {
+      caseSensitive: true,
+      resolveMode: "obsidian-fuzzy",
+    });
+    expect(r.kind).toBe("not-found");
+  });
+});
