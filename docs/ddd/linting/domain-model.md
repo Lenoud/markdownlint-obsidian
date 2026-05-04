@@ -19,6 +19,27 @@ interface LintError {
 }
 ```
 
+### Fix
+
+Immutable. A single-line, column-based text edit attached to a `LintError`
+when a rule can safely repair the violation.
+
+```typescript
+interface Fix {
+  readonly lineNumber: number;   // 1-based
+  readonly editColumn: number;   // 1-based
+  readonly deleteCount: number;  // >= 0
+  readonly insertText: string;
+}
+```
+
+The domain deliberately rejects negative `deleteCount` values. Upstream
+markdownlint uses `deleteCount: -1` as a sentinel for deleting an entire line,
+including its trailing newline. That operation is not representable in this
+column-span model, so the standard-rule adapter drops that fix payload and
+still reports the underlying `MDxxx` violation. This prevents unrepresentable
+fixes from escaping as `OFM901` internal parser errors.
+
 ### LintResult
 
 Immutable. All errors for one file.

@@ -35,6 +35,13 @@ markdownlint-obsidian --fix-check "**/*.md"
 
 markdownlint's own built-in rules (MD-prefix) also emit fix payloads when supported upstream; these are applied automatically alongside OFM fixes.
 
+Some upstream markdownlint fixes are reported but not applied. In particular,
+markdownlint uses `deleteCount: -1` to mean "delete the whole line" for rules
+such as MD012. The `markdownlint-obsidian` fix model only represents
+single-line column edits with non-negative delete counts, so those whole-line
+fixes are omitted. The lint violation still appears normally; it just has no
+attached autofix.
+
 ## How fixes are applied
 
 1. **First pass** — lint every file; collect `Fix` objects from each violation.
