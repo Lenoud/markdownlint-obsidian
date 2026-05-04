@@ -55,12 +55,12 @@ Source: `extension.mjs` `fixAll`; README `Fix`.
 ```text
 Tag: Markdownlint.RangeFormatting
 Gist: Register Markdown range formatting that applies markdownlint fixes within the requested range.
-Ambition: VS Code format document and format selection commands can use markdownlint auto-fixes.
+Ambition: VS Code range-formatting requests use markdownlint auto-fixes; the README also documents Markdown formatting through the Format Document and Format Selection commands.
 Scale: Percentage of formatting requests on Markdown documents that return a full-document replacement edit only when fixable violations exist inside the requested range.
-Meter: VS Code integration test calling the range formatting provider with Markdown and non-Markdown documents, ranges with fixable violations, ranges without fixable violations, and documents whose fixes change text.
+Meter: VS Code integration test calling the registered range formatting provider with Markdown and non-Markdown documents, ranges with fixable violations, ranges without fixable violations, and documents whose fixes change text. Add a smoke test for the README-claimed Format Document and Format Selection commands if treating those commands as guaranteed behavior.
 Fail: Formatting edits non-Markdown documents, applies fixes outside the requested diagnostic range set, omits an expected replacement edit, or returns an edit when fixed text equals original text.
 Goal: 100% of formatting requests match source behavior.
 Stakeholders: Markdown authors, VS Code users.
 Owner: vscode-markdownlint extension.
-Source: `extension.mjs` `formatDocument`; README `Fix`.
+Source: `extension.mjs` `formatDocument` and `registerDocumentRangeFormattingEditProvider`; README `Fix`.
 ```

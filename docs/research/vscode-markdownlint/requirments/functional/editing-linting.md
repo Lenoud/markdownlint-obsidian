@@ -58,8 +58,8 @@ Tag: Markdownlint.ConfigurationResolution
 Gist: Resolve markdownlint configuration from files, VS Code settings, defaults, and explicit config paths.
 Ambition: Runtime linting follows the same configuration sources documented for users.
 Scale: Percentage of lint invocations whose markdownlint options include the source-defined default config, user/workspace config, custom rules, explicit config-file argument, and supported `extends` resolution.
-Meter: Integration test invoking linting with combinations of `.markdownlint*`, `.markdownlint-cli2*`, `markdownlint.config`, `markdownlint.configFile`, `markdownlint.customRules`, global/workspace `extends`, `${userHome}`, `${workspaceFolder}`, and tilde expansion.
-Fail: Any supported configuration source is ignored, applied in the wrong place, or resolved from the wrong base directory.
+Meter: Integration test invoking linting with combinations of `.markdownlint*`, `.markdownlint-cli2*`, `markdownlint.config`, `markdownlint.configFile`, `markdownlint.customRules`, global/workspace `extends`, and path expansion. For `markdownlint.config.extends`, cover `${userHome}`, `${workspaceFolder}`, and tilde expansion; for `markdownlint.configFile`, cover the explicit `--config` argument and tilde expansion only.
+Fail: Any supported configuration source is ignored, applied in the wrong place, expanded with unsupported substitutions, or resolved from the wrong base directory.
 Goal: 100% of supported configuration combinations match source and README behavior.
 Stakeholders: Markdown authors, workspace maintainers, extension maintainers.
 Owner: vscode-markdownlint extension.

@@ -43,7 +43,7 @@ Source snapshot: upstream `main`, package version `0.61.2`, checked on
 | Desktop entry | `main: ./bundle.js` |
 | Web entry | `browser: ./bundle.web.js` |
 | Activation | `onLanguage:markdown` |
-| Test runner | Node's built-in test runner plus VS Code UI tests |
+| Test runner | Node's built-in test runner plus VS Code UI tests; `test-web` is defined but not run by CI |
 | CI | GitHub Actions on Ubuntu with `npm test` and Xvfb-backed UI tests |
 | Packaging helper | `@vscode/vsce` dev dependency |
 
@@ -100,6 +100,8 @@ The `test` script is broad:
 
 The `ci` script adds VS Code UI tests. GitHub Actions installs dependencies with
 `npm install --no-package-lock`, runs `npm test`, then runs UI tests under Xvfb.
+`package.json` also defines `npm run test-web` for `@vscode/test-web`, but the
+GitHub Actions CI workflow does not run it.
 
 ## Workspace Trust And Virtual Workspaces
 

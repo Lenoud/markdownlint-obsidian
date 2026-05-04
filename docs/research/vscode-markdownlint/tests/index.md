@@ -100,7 +100,9 @@ The upstream unit test surface is narrow. Most behavior validation lives outside
 unit tests:
 
 - linting and metadata consistency are enforced inside `npm test`;
-- extension behavior is covered through `test-ui/`;
+- some extension behavior is covered through `test-ui/`: diagnostics, fix-all,
+  diagnostic cleanup on close, non-default configuration, dynamic workspace
+  settings, and workspace-lint terminal creation;
 - package correctness is partly enforced by generated schema diffs.
 
 For Flavor Grenade's extension, this suggests keeping small pure unit tests for
