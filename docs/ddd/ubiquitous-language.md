@@ -13,6 +13,8 @@ Canonical terms for the `markdownlint-obsidian` domain. All code, docs, and BDD 
 | **RuleRegistry** | The ordered collection of active Rules for a given LintRun |
 | **Severity** | `error` (fails CI) or `warning` (reported but does not fail) |
 | **Fixable** | A Rule that can automatically repair its violation in-place |
+| **Fix** | A single-line, column-based text edit with non-negative `deleteCount` |
+| **UnrepresentableFix** | A fix payload from an upstream rule that cannot be expressed as a `Fix`; the violation is reported without an attached fix |
 
 ## Vault Bounded Context
 

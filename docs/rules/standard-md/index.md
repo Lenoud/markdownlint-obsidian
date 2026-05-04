@@ -89,3 +89,20 @@ Rule configuration still flows through your standard
 
 `options` are forwarded verbatim to markdownlint — consult the upstream
 rule docs for the full option shapes.
+
+## Fix payload compatibility
+
+Upstream markdownlint rules can emit autofix metadata. Most fixes translate
+directly into the `markdownlint-obsidian` `Fix` model and are applied by
+`--fix` / `--fix-check`.
+
+One upstream shape is intentionally not translated: `fixInfo.deleteCount = -1`.
+Markdownlint uses that value as a sentinel for deleting an entire line,
+including its trailing newline. The `markdownlint-obsidian` fix model is
+single-line and column-based with a non-negative `deleteCount`, so whole-line
+deletion cannot be represented without a separate operation.
+
+When an MD rule emits that sentinel, the adapter reports the underlying MD
+violation without an attached fix. This preserves the actionable diagnostic
+and avoids misreporting the run as `OFM901: Fix.deleteCount must be >= 0`.
+Known upstream rules that use this sentinel include MD012 and MD053.
