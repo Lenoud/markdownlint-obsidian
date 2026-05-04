@@ -75,4 +75,27 @@ describe("standard MD integration", () => {
     const r = await spawnCli(["**/*.md"], vault);
     expect(r.stdout).not.toContain("MD018");
   });
+
+  it("MD028 (no-blanks-blockquote) is disabled so OFM callout separators pass", async () => {
+    await fs.writeFile(
+      path.join(vault, "note.md"),
+      "# h\n\n> [!INFO] Test callout\n> Line one.\n\n> Line two.\n",
+    );
+    const r = await spawnCli(["**/*.md"], vault);
+    expect(r.stdout).not.toContain("MD028");
+  });
+
+  it("MD028 can be explicitly re-enabled by user config", async () => {
+    await fs.writeFile(
+      path.join(vault, ".obsidian-linter.jsonc"),
+      JSON.stringify({ rules: { MD028: { enabled: true } } }),
+    );
+    await fs.writeFile(
+      path.join(vault, "note.md"),
+      "# h\n\n> [!INFO] Test callout\n> Line one.\n\n> Line two.\n",
+    );
+    const r = await spawnCli(["**/*.md"], vault);
+    expect(r.stdout).toContain("MD028");
+    expect(r.exitCode).toBe(0);
+  });
 });
