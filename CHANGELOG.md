@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   across two lint runs. Multiple suffix matches are reported as ambiguous
   (OFM004) instead of arbitrary picking. Closes #27.
 
+### Tests
+
+- Added integration regression test (`tests/integration/regression/issue-26-md028-callout.test.ts`)
+  exercising the full lint pipeline against a multi-paragraph callout — pins
+  the existing default-disable wiring so a future change to `OFM_MD_CONFLICTS`
+  or `extractMdConfig` cannot silently re-introduce the issue #26 false-positive.
+
 ## [1.0.2] - 2026-04-18
 
 ### Fixed
