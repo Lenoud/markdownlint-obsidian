@@ -114,15 +114,18 @@ The `action/dist/main.js` bundle must be committed. CI enforces this with
 
 ### Publishing
 
-Publish from the individual packages, not from the workspace root.
+Do not publish packages manually. Release publishing runs from
+`.github/workflows/npm-publish.yml`, which calls the reusable
+`_publish-packages.yml` workflow.
 
-```bash
-cd packages/core && npm publish
-cd packages/cli && npm publish
-```
+Publishing must use npm trusted publishing only: GitHub Actions OIDC plus
+`npm publish --provenance`. Do not add registry tokens, `NODE_AUTH_TOKEN`,
+GitHub Packages npm publishing, GHCR package/image publishing, or manual
+`npm publish` release steps.
 
 `scripts/prepare-publish.mjs` rewrites workspace-local `workspace:*`
-dependencies to real semver ranges before publish.
+dependencies to real semver ranges during the release workflow and dry-run
+checks.
 
 ## Invariants — Do Not Violate
 
@@ -139,7 +142,9 @@ dependencies to real semver ranges before publish.
 - Never publish from the workspace root. The root `package.json` has a
   `prepublishOnly` guard that exits 1 to enforce this.
 - `workspace:*` dependencies must be resolved to real semver ranges by
-  `scripts/prepare-publish.mjs` before any `npm publish` call.
+  `scripts/prepare-publish.mjs` before any release or dry-run publish step.
+- Publishing must remain tokenless: OIDC trusted publishing only, never
+  registry auth tokens.
 - CHANGELOG entries must follow Keep a Changelog 1.1.0 format.
   Add `[Unreleased]` entries; release automation promotes them.
 

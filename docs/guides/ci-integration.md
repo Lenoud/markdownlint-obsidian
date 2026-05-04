@@ -1,8 +1,9 @@
 # CI integration guide
 
-This guide covers the three supported ways to run `markdownlint-obsidian`
-in CI: a GitHub Action, the `pre-commit` framework, and a Docker image.
-Pick whichever matches your pipeline's existing style.
+This guide covers the supported ways to run `markdownlint-obsidian`
+in CI: a GitHub Action, the `pre-commit` framework, and npm/npx-based
+invocations in other CI systems. Published artifacts are distributed through
+npmjs.org using trusted publishing only.
 
 ## GitHub Action
 
@@ -50,46 +51,13 @@ Add `markdownlint-obsidian` to `.pre-commit-config.yaml`:
 The hook runs the npm bin against every staged `*.md` file. Use
 `pre-commit install` once per clone to enable it.
 
-## Docker
-
-For pipelines that want a hermetic, Node-free runner:
-
-```bash
-docker run --rm -v "$(pwd):/workdir" \
-  ghcr.io/alisonaquinas/markdownlint-obsidian:latest \
-  "**/*.md"
-```
-
-Note: `:latest` floats to the newest release. For reproducible CI builds, pin to a specific tag (e.g., `:v0.8.0`) or digest. See the [Installation guide](./install.md#pinning-by-digest-recommended-for-reproducible-ci) for details.
-
-The image is published to GitHub Container Registry on every release.
-Tag both `latest` and the release tag (e.g. `v0.8.0`) so you can pin
-versions in your pipeline.
-
-### Verifying the image before use
-
-Every release image is signed with [Sigstore cosign](https://github.com/sigstore/cosign).
-Add this step before running the image in security-sensitive pipelines:
-
-```yaml
-- uses: sigstore/cosign-installer@v3
-
-- name: Verify image signature
-  run: |
-    cosign verify \
-      --certificate-identity-regexp '^https://github\.com/alisonaquinas/markdownlint-obsidian/' \
-      --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-      ghcr.io/alisonaquinas/markdownlint-obsidian:latest
-```
-
-For reproducible CI, replace `:latest` with a digest pin. See the
-[Installation guide](./install.md#pinning-by-digest-recommended-for-reproducible-ci) for details.
-
 ### GitLab CI example
 
 ```yaml
 lint:markdown:
-  image: ghcr.io/alisonaquinas/markdownlint-obsidian:latest
+  image: node:20
+  before_script:
+    - npm install -g markdownlint-obsidian-cli
   script:
     - markdownlint-obsidian "**/*.md" --output-formatter junit > junit.xml
   artifacts:

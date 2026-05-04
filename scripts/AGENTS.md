@@ -7,7 +7,7 @@ npm packages; they support release and packaging workflows for the monorepo.
 
 ```text
 scripts/
-├── prepare-publish.mjs   # rewrite workspace deps to real semver before npm publish
+├── prepare-publish.mjs   # rewrite workspace deps to real semver before packaging
 └── README.md             # human-facing usage notes
 ```
 
@@ -15,10 +15,16 @@ scripts/
 
 ### Publishing a package
 
-1. Run `node scripts/prepare-publish.mjs <pkg-dir> [scope]`.
+1. Let the release or dry-run workflow run
+   `node scripts/prepare-publish.mjs <pkg-dir>`.
 2. Confirm the package-local `package.json` now contains concrete dependency
    ranges instead of `workspace:*`.
-3. Publish from `packages/core` or `packages/cli`, not from the workspace root.
+3. Keep the publish step in GitHub Actions so npm trusted publishing can use
+   OIDC with `npm publish --provenance`.
+
+Do not add registry tokens, `NODE_AUTH_TOKEN`, GitHub Packages npm publishing,
+GHCR package/image publishing, or manual package-root `npm publish` release
+steps.
 
 ## Invariants — Do Not Violate
 
@@ -27,6 +33,8 @@ scripts/
   lint behavior.
 - Do not mutate the wrong package manifest. `prepare-publish.mjs` should only
   touch the package directory passed on the command line.
+- Packaging support must preserve tokenless publishing: OIDC trusted publishing
+  only, never registry auth tokens.
 
 ## See Also
 
