@@ -145,6 +145,18 @@ describe("matchWikilink — obsidian-fuzzy resolveMode (issue #27)", () => {
     expect(r.kind).toBe("ambiguous");
   });
 
+  it("bare targets keep the basename strategy in fuzzy mode", () => {
+    const BARE = makeVaultPath(ROOT_M, path.resolve("/m/wiki/foo.md"));
+    const r = matchWikilink("foo", [BARE], {
+      caseSensitive: false,
+      resolveMode: "obsidian-fuzzy",
+    });
+    expect(r.kind).toBe("resolved");
+    if (r.kind === "resolved") {
+      expect(r.strategy).toBe("basename");
+    }
+  });
+
   it("case-insensitive path-suffix match", () => {
     const r = matchWikilink("Sources/FOO", [WIKI_SOURCES_FOO], {
       caseSensitive: false,

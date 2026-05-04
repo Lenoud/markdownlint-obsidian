@@ -94,6 +94,8 @@ export function matchWikilink(
  * of this file's path equal the target") instead of accidentally matching
  * partial path components — `notes/sources/foo.md` resolves
  * `[[sources/foo]]` but `super-sources/foo.md` does not.
+ * Bare targets like `[[foo]]` intentionally fall through to basename
+ * matching so fuzzy mode does not change the reported resolution strategy.
  *
  * Returns `null` (not `not-found`) when zero candidates match so the
  * caller can fall through to the basename strategy.
@@ -103,6 +105,8 @@ function matchByPathSuffix(
   files: readonly VaultPath[],
   options: MatchOptions,
 ): MatchResult | null {
+  if (!normalizedTarget.includes("/")) return null;
+
   const eq: (a: string, b: string) => boolean = options.caseSensitive
     ? (a: string, b: string): boolean => a === b
     : (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();
