@@ -7,11 +7,12 @@
  * assert the *shape* of {@link DEFAULT_CONFIG.rules.MD028} — they do not
  * exercise the wiring all the way through {@link extractMdConfig} →
  * {@link MarkdownLintAdapter}. This integration test runs the full
- * pipeline against a callout pattern that **does** trigger upstream
+ * pipeline against both the canonical OFM multi-paragraph callout separator
+ * and a callout-shaped blockquote pattern that **does** trigger upstream
  * markdownlint's MD028 (a truly blank line separating two blockquoted
- * regions, as Obsidian sometimes encourages for multi-paragraph callouts)
- * and pins the expected behaviour: zero MD028 violations under defaults,
- * one MD028 violation when the user explicitly re-enables the rule.
+ * regions). Together they pin the expected behaviour: zero MD028 violations
+ * under defaults, one MD028 violation when the user explicitly re-enables
+ * the rule.
  *
  * The repro intentionally uses a plain blank-line separator rather than
  * the `>` blank-line variant from the issue text — upstream markdownlint
@@ -28,7 +29,13 @@ import * as os from "node:os";
 import * as fs from "node:fs/promises";
 import { lint } from "../../../src/engine/index.js";
 
-const MULTI_PARAGRAPH_CALLOUT = `> [!info] Test callout
+const CANONICAL_MULTI_PARAGRAPH_CALLOUT = `> [!info] Test callout
+> Line one.
+>
+> Line two.
+`;
+
+const MD028_REPRO_CALLOUT = `> [!info] Test callout
 > Line one.
 
 > Line two.
@@ -45,8 +52,20 @@ async function makeTmpVaultWith(content: string, configBody?: string): Promise<s
 }
 
 describe("regression: issue #26 — MD028 false-positive on OFM callouts", () => {
-  it("does not fire on a multi-paragraph callout under default config", async () => {
-    const tmpDir = await makeTmpVaultWith(MULTI_PARAGRAPH_CALLOUT);
+  it("does not fire on a canonical multi-paragraph callout under default config", async () => {
+    const tmpDir = await makeTmpVaultWith(CANONICAL_MULTI_PARAGRAPH_CALLOUT);
+    try {
+      const results = await lint({ globs: ["**/*.md"], cwd: tmpDir });
+      expect(results).toHaveLength(1);
+      const md028 = results[0]!.errors.filter((e) => e.ruleCode === "MD028");
+      expect(md028).toEqual([]);
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it("does not surface the upstream MD028 repro under default config", async () => {
+    const tmpDir = await makeTmpVaultWith(MD028_REPRO_CALLOUT);
     try {
       const results = await lint({ globs: ["**/*.md"], cwd: tmpDir });
       expect(results).toHaveLength(1);
@@ -59,12 +78,12 @@ describe("regression: issue #26 — MD028 false-positive on OFM callouts", () =>
 
   it("fires when the user explicitly re-enables MD028", async () => {
     const userConfig = JSON.stringify({ rules: { MD028: { enabled: true } } });
-    const tmpDir = await makeTmpVaultWith(MULTI_PARAGRAPH_CALLOUT, userConfig);
+    const tmpDir = await makeTmpVaultWith(MD028_REPRO_CALLOUT, userConfig);
     try {
       const results = await lint({ globs: ["**/*.md"], cwd: tmpDir });
       expect(results).toHaveLength(1);
       const md028 = results[0]!.errors.filter((e) => e.ruleCode === "MD028");
-      expect(md028.length).toBeGreaterThan(0);
+      expect(md028).toHaveLength(1);
     } finally {
       await fs.rm(tmpDir, { recursive: true, force: true });
     }
