@@ -53,6 +53,16 @@ markdownlint-obsidian/
 
 ## Workflows
 
+### Branching
+
+This repository uses git-flow branch conventions:
+
+- `develop` is the integration branch for active work.
+- `main` is the release branch.
+- Use `feature/<slug>` for normal feature, documentation, and planning work.
+- Use `hotfix/<slug>` for urgent release fixes.
+- Open PRs against `develop` unless the change is an actual release hotfix.
+
 ### Running tests
 
 ```bash

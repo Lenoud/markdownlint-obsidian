@@ -58,6 +58,27 @@ interface RuleConfig {
 }
 ```
 
+### Standard MD Conflict Default
+
+A built-in `RuleConfig` entry for a standard markdownlint rule whose upstream
+behavior conflicts with OFM syntax. The authoritative source is
+`packages/core/src/infrastructure/rules/standard/OFM_MD_CONFLICTS.ts`;
+`DEFAULT_CONFIG.rules` derives one `{ enabled: false }` entry for each conflict.
+
+The rule remains registered in the linting context. Users can opt back in by
+overriding that single rule, for example:
+
+```jsonc
+{
+  "rules": {
+    "MD028": { "enabled": true }
+  }
+}
+```
+
+MD028 is a conflict because multi-paragraph callouts are blockquotes whose blank
+separators are required by OFM rendering.
+
 ## Cascade Logic
 
 Config files are discovered by walking from each file's directory up to vault root.
@@ -69,3 +90,7 @@ Closer files take precedence. Precedence order (high → low):
 4. `.markdownlint.jsonc/yaml`
 5. `package.json#/markdownlint`
 6. Built-in defaults
+
+The `rules` branch is deep-merged across the cascade. A user override for one
+rule replaces that rule's config without discarding sibling defaults, including
+the standard MD conflict defaults.

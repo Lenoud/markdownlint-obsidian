@@ -102,6 +102,8 @@ Phase 7 adopts every upstream markdownlint rule as a first-class rule in
 the registry. See the [[rules/standard-md/index|standard-md catalog]]
 for the enabled/disabled status of every `MDxxx` code and the
 conflict-page links for the rules disabled by default in OFM vaults.
+`OFM_MD_CONFLICTS.ts` is the source of truth for those standard-MD conflict
+defaults.
 
 ## Custom rules (user-defined codes)
 

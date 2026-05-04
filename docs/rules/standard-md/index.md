@@ -15,6 +15,12 @@ explanation. Rules marked **disabled** collide with OFM syntax and ship
 disabled-by-default; see the conflict page for the rationale and how to
 re-enable the rule if you need it.
 
+The source of truth for disabled standard-MD conflict defaults is
+`packages/core/src/infrastructure/rules/standard/OFM_MD_CONFLICTS.ts`.
+`DEFAULT_CONFIG.rules` derives its MD-prefixed disabled entries from that list,
+and the adapter translates those entries into upstream markdownlint
+configuration before linting.
+
 ## Quick reference
 
 | Code  | Name                         | Default   | OFM conflict note                  |
@@ -73,7 +79,9 @@ per file per lint pass regardless of how many MD rules are enabled, so
 turning every rule on only pays one markdownlint cost per file.
 
 Rule configuration still flows through your standard
-`.obsidian-linter.jsonc`. Use the `rules` block:
+`.obsidian-linter.jsonc`. The `rules` block is deep-merged with built-in
+defaults, so changing one rule does not discard disabled defaults for other OFM
+conflicts. Use the `rules` block:
 
 ```jsonc
 {

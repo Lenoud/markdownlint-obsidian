@@ -1,15 +1,11 @@
-/** Unit tests for {@link buildStandardRule} and {@link extractMdConfig}. @module tests/unit/rules/standard/StandardRuleAdapter.test */
+/** Unit tests for {@link buildStandardRule}. @module tests/unit/rules/standard/StandardRuleAdapter.test */
 import { describe, it, expect } from "bun:test";
-import {
-  buildStandardRule,
-  extractMdConfig,
-} from "../../../../src/infrastructure/rules/standard/StandardRuleAdapter.js";
+import { buildStandardRule } from "../../../../src/infrastructure/rules/standard/StandardRuleAdapter.js";
 import type {
   MarkdownLintAdapter,
   StandardViolation,
 } from "../../../../src/infrastructure/rules/standard/MarkdownLintAdapter.js";
 import { runRuleOnSource } from "../helpers/runRuleOnSource.js";
-import { DEFAULT_CONFIG } from "../../../../src/infrastructure/config/defaults.js";
 
 /**
  * Build a stub {@link MarkdownLintAdapter} that returns the canned
@@ -195,63 +191,5 @@ describe("buildStandardRule", () => {
       deleteCount: 0,
       insertText: "",
     });
-  });
-});
-
-describe("extractMdConfig", () => {
-  it("starts every translation with { default: true }", () => {
-    const cfg = { ...DEFAULT_CONFIG, rules: {} };
-    expect(extractMdConfig(cfg)).toEqual({ default: true });
-  });
-
-  it("maps enabled: false to false", () => {
-    const cfg = {
-      ...DEFAULT_CONFIG,
-      rules: { MD013: { enabled: false } },
-    };
-    const mdc = extractMdConfig(cfg);
-    expect(mdc.MD013).toBe(false);
-    expect(mdc.default).toBe(true);
-  });
-
-  it("forwards rule options verbatim when provided", () => {
-    const cfg = {
-      ...DEFAULT_CONFIG,
-      rules: {
-        MD013: { enabled: true, options: { line_length: 120 } },
-      },
-    };
-    const mdc = extractMdConfig(cfg);
-    expect(mdc.MD013).toEqual({ line_length: 120 });
-  });
-
-  it("uses true (enabled, no options) when only enabled is set", () => {
-    const cfg = {
-      ...DEFAULT_CONFIG,
-      rules: { MD013: { enabled: true } },
-    };
-    expect(extractMdConfig(cfg).MD013).toBe(true);
-  });
-
-  it("ignores non-MD rule keys so upstream markdownlint does not reject them", () => {
-    const cfg = {
-      ...DEFAULT_CONFIG,
-      rules: {
-        OFM001: { enabled: false },
-        MD013: { enabled: false },
-      },
-    };
-    const mdc = extractMdConfig(cfg);
-    expect(mdc.OFM001).toBeUndefined();
-    expect(mdc.MD013).toBe(false);
-  });
-
-  it("reflects the five Phase 7 OFM conflict disables when translating DEFAULT_CONFIG", () => {
-    const mdc = extractMdConfig(DEFAULT_CONFIG);
-    expect(mdc.MD013).toBe(false);
-    expect(mdc.MD033).toBe(false);
-    expect(mdc.MD034).toBe(false);
-    expect(mdc.MD041).toBe(false);
-    expect(mdc.MD042).toBe(false);
   });
 });

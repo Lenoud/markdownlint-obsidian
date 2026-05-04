@@ -6,6 +6,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { loadConfig } from "../../../src/infrastructure/config/ConfigLoader.js";
 import { DEFAULT_CONFIG } from "../../../src/infrastructure/config/defaults.js";
+import type { LinterConfig } from "../../../src/domain/config/LinterConfig.js";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -19,6 +20,10 @@ beforeEach(async () => {
 afterEach(async () => {
   await fs.rm(tmpDir, { recursive: true, force: true });
 });
+
+function expectRuleDisabled(config: LinterConfig, code: string): void {
+  expect(config.rules[code]).toEqual({ enabled: false });
+}
 
 describe("ConfigLoader", () => {
   it("returns default config when no config file present", async () => {
@@ -45,14 +50,15 @@ describe("ConfigLoader", () => {
     );
     const config = await loadConfig(tmpDir);
     // User override applied
-    expect(config.rules.MD031?.enabled).toBe(false);
+    expectRuleDisabled(config, "MD031");
     // Phase 7 default disables preserved
-    expect(config.rules.MD013?.enabled).toBe(false);
-    expect(config.rules.MD033?.enabled).toBe(false);
-    expect(config.rules.MD042?.enabled).toBe(false);
+    expectRuleDisabled(config, "MD013");
+    expectRuleDisabled(config, "MD028");
+    expectRuleDisabled(config, "MD033");
+    expectRuleDisabled(config, "MD042");
     // Phase 2-6 OFM disables preserved
-    expect(config.rules.OFM003?.enabled).toBe(false);
-    expect(config.rules.OFM062?.enabled).toBe(false);
+    expectRuleDisabled(config, "OFM003");
+    expectRuleDisabled(config, "OFM062");
   });
 
   it("lets a user override replace an individual rule's config without wiping siblings", async () => {
@@ -70,6 +76,7 @@ describe("ConfigLoader", () => {
       options: { line_length: 120 },
     });
     // Other conflict disables survive.
-    expect(config.rules.MD042?.enabled).toBe(false);
+    expectRuleDisabled(config, "MD028");
+    expectRuleDisabled(config, "MD042");
   });
 });
