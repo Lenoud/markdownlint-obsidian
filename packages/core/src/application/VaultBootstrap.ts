@@ -15,6 +15,7 @@ import type { VaultDetector } from "../domain/vault/VaultDetector.js";
 import type { VaultIndex } from "../domain/vault/VaultIndex.js";
 import type { VaultPath } from "../domain/vault/VaultPath.js";
 import { makeBlockRefIndex, type BlockRefIndex } from "../domain/vault/BlockRefIndex.js";
+import type { ResolveMode } from "../domain/vault/WikilinkMatcher.js";
 
 /**
  * Output of a successful {@link bootstrapVault} run.
@@ -41,7 +42,10 @@ export interface BootstrapResult {
  */
 export interface BootstrapDeps {
   readonly detector: VaultDetector;
-  readonly buildIndex: (root: string, opts: { caseSensitive: boolean }) => Promise<VaultIndex>;
+  readonly buildIndex: (
+    root: string,
+    opts: { caseSensitive: boolean; resolveMode?: ResolveMode },
+  ) => Promise<VaultIndex>;
   readonly buildBlockRefIndex: (files: readonly VaultPath[]) => Promise<BlockRefIndex>;
 }
 
@@ -68,7 +72,10 @@ export async function bootstrapVault(
     config.vaultRoot !== null && config.vaultRoot !== undefined
       ? config.vaultRoot
       : await deps.detector.detect(startDir);
-  const vault = await deps.buildIndex(root, { caseSensitive: config.wikilinks.caseSensitive });
+  const vault = await deps.buildIndex(root, {
+    caseSensitive: config.wikilinks.caseSensitive,
+    resolveMode: config.wikilinks.resolveMode,
+  });
   const blockRefs = await deps.buildBlockRefIndex(vault.all());
   return { vault, blockRefs };
 }

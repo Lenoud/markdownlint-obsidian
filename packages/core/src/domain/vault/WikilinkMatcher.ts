@@ -14,15 +14,37 @@ import type { VaultPath } from "./VaultPath.js";
  *
  * `strategy` on `resolved` records which of Obsidian's fallback mechanisms
  * actually found the file. Rules use it to distinguish exact matches from
- * case-insensitive ones (which power OFM005).
+ * case-insensitive ones (which power OFM005). The `path-suffix` strategy
+ * is only ever returned when {@link MatchOptions.resolveMode} is
+ * `"obsidian-fuzzy"`.
  */
 export type MatchResult =
-  | { kind: "resolved"; path: VaultPath; strategy: "exact" | "case-insensitive" | "basename" }
+  | {
+      kind: "resolved";
+      path: VaultPath;
+      strategy: "exact" | "case-insensitive" | "path-suffix" | "basename";
+    }
   | { kind: "ambiguous"; candidates: readonly VaultPath[] }
   | { kind: "not-found" };
 
+/**
+ * Resolution mode for wikilink targets.
+ *
+ * - `"path-relative"` (default) — exact, case-insensitive (when
+ *   `caseSensitive` is false), then basename. Matches the behaviour shipped
+ *   in 1.0.x.
+ * - `"obsidian-fuzzy"` — adds a path-suffix step between case-insensitive
+ *   and basename. Mirrors Obsidian's own algorithm for vaults that mix
+ *   vault-absolute (`[[raw/upnote/Note]]`) and folder-implicit
+ *   (`[[sources/foo]]`) wikilinks.
+ *
+ * See https://github.com/alisonaquinas/markdownlint-obsidian/issues/27.
+ */
+export type ResolveMode = "path-relative" | "obsidian-fuzzy";
+
 export interface MatchOptions {
   readonly caseSensitive: boolean;
+  readonly resolveMode?: ResolveMode;
 }
 
 /**
@@ -31,7 +53,12 @@ export interface MatchOptions {
  * Resolution order mirrors Obsidian itself:
  *   1. Exact path match (minus `.md`).
  *   2. Case-insensitive path match (opt-in via `caseSensitive: false`).
- *   3. Basename match against {@link VaultPath.stem}; multiple hits → ambiguous.
+ *   3. Path-suffix match — `obsidian-fuzzy` mode only — any file whose
+ *      relative path ends with `<target>.md` aligned on a `/` boundary.
+ *      A unique hit resolves; multiple hits are reported as ambiguous so
+ *      OFM004 can surface the conflict instead of an arbitrary winner.
+ *   4. Basename match against {@link VaultPath.stem}; multiple hits →
+ *      ambiguous.
  */
 export function matchWikilink(
   target: string,
@@ -51,7 +78,47 @@ export function matchWikilink(
     if (ci !== undefined) return { kind: "resolved", path: ci, strategy: "case-insensitive" };
   }
 
+  if (options.resolveMode === "obsidian-fuzzy") {
+    const suffix = matchByPathSuffix(normalizedTarget, files, options);
+    if (suffix !== null) return suffix;
+  }
+
   return matchByStem(normalizedTarget, files, options);
+}
+
+/**
+ * Path-suffix match: a file's POSIX relative path (minus `.md`) ends with
+ * the target aligned on a `/` boundary.
+ *
+ * Aligning on `/` keeps the match conceptual ("the trailing `n` segments
+ * of this file's path equal the target") instead of accidentally matching
+ * partial path components — `notes/sources/foo.md` resolves
+ * `[[sources/foo]]` but `super-sources/foo.md` does not.
+ *
+ * Returns `null` (not `not-found`) when zero candidates match so the
+ * caller can fall through to the basename strategy.
+ */
+function matchByPathSuffix(
+  normalizedTarget: string,
+  files: readonly VaultPath[],
+  options: MatchOptions,
+): MatchResult | null {
+  const eq: (a: string, b: string) => boolean = options.caseSensitive
+    ? (a: string, b: string): boolean => a === b
+    : (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();
+  const candidates = files.filter((f) => {
+    const stripped = stripExt(f.relative);
+    if (eq(stripped, normalizedTarget)) return true;
+    if (stripped.length <= normalizedTarget.length) return false;
+    const boundary = stripped.length - normalizedTarget.length - 1;
+    if (stripped.charAt(boundary) !== "/") return false;
+    return eq(stripped.slice(boundary + 1), normalizedTarget);
+  });
+  if (candidates.length === 0) return null;
+  if (candidates.length === 1) {
+    return { kind: "resolved", path: candidates[0]!, strategy: "path-suffix" };
+  }
+  return { kind: "ambiguous", candidates };
 }
 
 function matchByStem(
