@@ -95,6 +95,18 @@ GitHub Packages requires that npm packages be published under a scope matching t
 - **Slightly larger CI publish job.** The publish job grows by approximately 3–5 minutes: cosign install and image signing (~1 min), second-registry publish (~1–2 min), and provenance generation overhead (~1 min). This is within acceptable CI budget for a release-only job that does not run on every pull request.
 - **Scoped names on GitHub Packages.** The secondary registry packages are `@alisonaquinas/markdownlint-obsidian` and `@alisonaquinas/markdownlint-obsidian-cli`, which differ from the primary registry names. Consumers using the mirror must reference the scoped names in their `.npmrc`. This difference is documented in the installation guide.
 
+## 2026-05-04 update: tokenless publishing only
+
+This ADR's multi-registry decision is superseded by a stricter release policy:
+publishing must use OpenID Connect trusted publishing and must not depend on
+registry authentication tokens. The active release workflow now publishes only
+to npmjs.org with `npm publish --provenance`, backed by GitHub Actions OIDC.
+
+The GitHub Packages npm mirror and GHCR Docker image publish paths are disabled
+because they require token-backed registry writes in the current workflow model.
+They can be reconsidered only if those registries support an OIDC trusted
+publishing flow that does not require a registry token.
+
 ## Related
 
 - [[plans/phase-14-multi-registry-cd]]

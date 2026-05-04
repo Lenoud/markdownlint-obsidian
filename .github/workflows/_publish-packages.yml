@@ -3,6 +3,8 @@ name: Publish packages (reusable)
 # Reusable workflow — called by npm-publish.yml (real releases) and ci.yml
 # (dry-run on every PR/push).  Both paths exercise the same build and
 # prepare-publish logic; the only difference is the final npm publish flag.
+# Real publishing is npm trusted publishing only: OIDC + provenance, never a
+# registry auth token.
 
 on:
   workflow_call:
@@ -108,47 +110,3 @@ jobs:
       - name: Publish cli [dry-run]
         run: npm publish --access public --dry-run
         working-directory: packages/cli
-
-  # ── GHCR npm publish ────────────────────────────────────────────────────────
-  # Runs only on real releases (after the npm publish succeeds).
-  # Publishes scoped @alisonaquinas variants to GitHub Packages.
-  publish-ghcr-npm:
-    if: ${{ !inputs.dry_run }}
-    runs-on: ubuntu-latest
-    needs: publish
-    strategy:
-      fail-fast: false
-      matrix:
-        pkg:
-          - { dir: packages/core, tag_prefix: "packages/core" }
-          - { dir: packages/cli, tag_prefix: "packages/cli" }
-    steps:
-      - uses: actions/checkout@v4
-        if: startsWith(inputs.tag_name, matrix.pkg.tag_prefix)
-
-      - uses: oven-sh/setup-bun@v2
-        if: startsWith(inputs.tag_name, matrix.pkg.tag_prefix)
-        with:
-          bun-version: "1.3.12"
-
-      - uses: actions/setup-node@v4
-        if: startsWith(inputs.tag_name, matrix.pkg.tag_prefix)
-        with:
-          node-version: "20"
-          registry-url: "https://npm.pkg.github.com"
-          scope: "@alisonaquinas"
-
-      - name: Build
-        if: startsWith(inputs.tag_name, matrix.pkg.tag_prefix)
-        run: bun install --frozen-lockfile && bun run --filter '*' build
-
-      - name: Rewrite workspace:* deps and name for scoped publish
-        if: startsWith(inputs.tag_name, matrix.pkg.tag_prefix)
-        run: node scripts/prepare-publish.mjs ${{ matrix.pkg.dir }} @alisonaquinas
-
-      - name: Publish to GitHub Packages
-        if: startsWith(inputs.tag_name, matrix.pkg.tag_prefix)
-        working-directory: ${{ matrix.pkg.dir }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm publish --access public

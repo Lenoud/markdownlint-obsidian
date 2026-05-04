@@ -2,7 +2,7 @@
 // Rewrite a package's package.json before `npm publish` so the published
 // tarball contains real version specifiers instead of Bun/pnpm `workspace:*`
 // literals. Optionally rewrite the package name and workspace deps for scoped
-// (e.g. GitHub Packages) publishes.
+// registry publishes.
 //
 // Usage:
 //   node scripts/prepare-publish.mjs <pkg-dir> [scope]

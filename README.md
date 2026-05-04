@@ -98,14 +98,6 @@ project root.
     - id: markdownlint-obsidian
 ```
 
-### Docker
-
-```bash
-docker run --rm -v "$(pwd):/workdir" \
-  ghcr.io/alisonaquinas/markdownlint-obsidian:latest \
-  "**/*.md"
-```
-
 See [`docs/guides/ci-integration.md`](docs/guides/ci-integration.md)
 for GitLab CI, Jenkins, and Azure Pipelines recipes.
 
@@ -123,7 +115,7 @@ for GitLab CI, Jenkins, and Azure Pipelines recipes.
 - [`packages/core/README.md`](packages/core/README.md) — programmatic API reference.
 - [`packages/cli/README.md`](packages/cli/README.md) — CLI usage and flags.
 - [`action/README.md`](action/README.md) — GitHub Action inputs, outputs, and build notes.
-- [`docs/guides/install.md`](docs/guides/install.md) — registry and container install matrix.
+- [`docs/guides/install.md`](docs/guides/install.md) — installation and provenance verification.
 - [`docs/roadmap.md`](docs/roadmap.md) — phased delivery plan.
 - [`docs/rules/`](docs/rules) — per-rule catalog (OFM + standard MD).
 - [`docs/guides/ci-integration.md`](docs/guides/ci-integration.md) — CI
