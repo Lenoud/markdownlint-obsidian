@@ -24,15 +24,18 @@ packages/
 
 ### Publishing
 
-Publish from the individual package directory:
+Do not publish packages manually. Release publishing is handled by the
+repository workflow in `.github/workflows/npm-publish.yml`, which calls the
+reusable `_publish-packages.yml` workflow.
 
-```bash
-cd packages/core && npm publish
-cd packages/cli && npm publish
-```
+The release workflow must use npm trusted publishing only: GitHub Actions OIDC
+plus `npm publish --provenance`. Do not add registry tokens, `NODE_AUTH_TOKEN`,
+GitHub Packages npm publishing, GHCR package/image publishing, or manual
+package-root `npm publish` release steps.
 
-Run [`../scripts/prepare-publish.mjs`](../scripts/prepare-publish.mjs) before
-publish so `workspace:*` dependencies are rewritten to real semver ranges.
+[`../scripts/prepare-publish.mjs`](../scripts/prepare-publish.mjs) is used by
+the release workflow and dry-run checks so `workspace:*` dependencies are
+rewritten to real semver ranges before packaging.
 
 ## Invariants — Do Not Violate
 
@@ -40,6 +43,8 @@ publish so `workspace:*` dependencies are rewritten to real semver ranges.
   wrapper with no duplicated business logic.
 - Never publish from the workspace root. The root `prepublishOnly` guard
   exists to stop that.
+- Keep publishing tokenless: OIDC trusted publishing only, never registry auth
+  tokens.
 - Keep package-local docs aligned with the current package metadata,
   entrypoints, and release process.
 
