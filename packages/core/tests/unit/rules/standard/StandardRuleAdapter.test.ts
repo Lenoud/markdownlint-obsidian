@@ -139,6 +139,63 @@ describe("buildStandardRule", () => {
     const errors = await runRuleOnSource(rule, "# h\n");
     expect(errors[0]?.fix).toBeUndefined();
   });
+
+  // Regression: issue #28. Markdownlint uses `deleteCount: -1` as a sentinel
+  // for "delete the entire line" (MD012, MD053). Our column-based applyFixes
+  // pipeline cannot represent line removal, so we surface the violation
+  // without a fix instead of crashing the rule with `Fix.deleteCount must
+  // be >= 0` (which the LintUseCase wraps as OFM901).
+  it("surfaces violations whose fixInfo uses the deleteCount=-1 sentinel without crashing", async () => {
+    const descMd012 = {
+      code: "MD012",
+      name: "no-multiple-blanks",
+      description: "Multiple consecutive blank lines",
+      fixable: true,
+      severity: "warning" as const,
+    };
+    const adapter = stubAdapter([
+      {
+        ruleNames: ["MD012", "no-multiple-blanks"],
+        ruleDescription: "Multiple consecutive blank lines",
+        lineNumber: 5,
+        fixInfo: { deleteCount: -1 },
+      },
+    ]);
+    const rule = buildStandardRule(descMd012, adapter);
+    const errors = await runRuleOnSource(rule, "# h\n\n\n\n");
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      ruleCode: "MD012",
+      line: 5,
+    });
+    expect(errors[0]?.fix).toBeUndefined();
+  });
+
+  it("preserves valid fixInfo unchanged even when fixable rules can also emit deleteCount=-1", async () => {
+    const descMd012 = {
+      code: "MD012",
+      name: "no-multiple-blanks",
+      description: "Multiple consecutive blank lines",
+      fixable: true,
+      severity: "warning" as const,
+    };
+    const adapter = stubAdapter([
+      {
+        ruleNames: ["MD012", "no-multiple-blanks"],
+        ruleDescription: "Multiple consecutive blank lines",
+        lineNumber: 3,
+        fixInfo: { lineNumber: 3, editColumn: 1, deleteCount: 0, insertText: "" },
+      },
+    ]);
+    const rule = buildStandardRule(descMd012, adapter);
+    const errors = await runRuleOnSource(rule, "# h\n\n\n");
+    expect(errors[0]?.fix).toMatchObject({
+      lineNumber: 3,
+      editColumn: 1,
+      deleteCount: 0,
+      insertText: "",
+    });
+  });
 });
 
 describe("extractMdConfig", () => {

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `StandardRuleAdapter` no longer crashes with
+  `OFM901: Fix.deleteCount must be >= 0` when an upstream markdownlint
+  rule (MD012, MD053) emits `fixInfo.deleteCount = -1` — the markdownlint
+  sentinel for "delete the entire line". Our column-based fix pipeline
+  cannot represent line removal, so the adapter now surfaces the
+  underlying violation without an attached fix instead of throwing
+  through `LintUseCase`. Closes #28.
+
 ## [1.0.2] - 2026-04-18
 
 ### Fixed
