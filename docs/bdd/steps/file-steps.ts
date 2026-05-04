@@ -232,6 +232,16 @@ Given("the config allowList includes {string}", async function (this: OFMWorld, 
   await this.writeFile(".obsidian-linter.jsonc", JSON.stringify(cfg));
 });
 
+// ---- Phase 7 standard markdownlint steps ----------------------------------
+
+Given("rule {word} is enabled", async function (this: OFMWorld, code: string) {
+  if (!this.vaultDir) await this.initVault();
+  await this.writeFile(
+    ".obsidian-linter.jsonc",
+    JSON.stringify({ rules: { [code]: { enabled: true } } }),
+  );
+});
+
 // ---- Phase 6 highlight steps ----------------------------------------------
 
 Given("a config file disabling highlights", async function (this: OFMWorld) {

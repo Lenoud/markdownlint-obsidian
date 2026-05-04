@@ -19,7 +19,8 @@ Three bounded contexts. Dependencies are acyclic and explicit.
 
 **Responsibility:** Discover, merge, and validate configuration files.
 
-**Owns:** `LinterConfig`, `RuleConfig`, cascade logic.
+**Owns:** `LinterConfig`, `RuleConfig`, cascade logic, standard MD conflict
+defaults.
 
 **Does not know about:** vault file contents, rule implementations.
 
@@ -43,5 +44,9 @@ using the configured wikilink resolution mode.
 **Owns:** `LintError`, `LintResult`, `LintRun`, `Rule`, `RuleRegistry`.
 
 **Depends on:** `LinterConfig` (which rules to run), `VaultIndex` (for resolution rules).
+
+Standard markdownlint rules are represented as registry rules too. The linting
+context honors config activation, so OFM-conflicting MD rules can remain
+registered while defaults suppress them.
 
 **Public interface:** `LintUseCase.run(files: string[], config: LinterConfig): Promise<LintResult[]>`

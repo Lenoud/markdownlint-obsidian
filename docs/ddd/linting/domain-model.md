@@ -65,6 +65,12 @@ interface RuleRegistry {
 }
 ```
 
+The registry contains both OFM-native rules and wrapped standard markdownlint
+rules. A rule can be registered but inactive for a given `LintRun` when
+`LinterConfig.rules[code].enabled === false`. OFM-conflicting standard rules
+such as MD028 use this model: they stay available for explicit user opt-in, but
+the default config suppresses them before markdownlint runs.
+
 ## Rule Contract
 
 ```typescript
