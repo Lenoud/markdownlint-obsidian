@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `wikilinks.resolveMode` config option (`"path-relative"` default,
+  `"obsidian-fuzzy"` opt-in). The fuzzy mode adds a path-suffix step to
+  wikilink resolution, mirroring Obsidian's own algorithm so vaults that
+  mix vault-absolute (`[[raw/upnote/Note]]`) and folder-implicit
+  (`[[sources/foo]]`) link styles resolve correctly without splitting them
+  across two lint runs. Multiple suffix matches are reported as ambiguous
+  (OFM004) instead of arbitrary picking. Closes #27.
+
 ### Tests
 
 - Added integration regression test (`tests/integration/regression/issue-26-md028-callout.test.ts`)

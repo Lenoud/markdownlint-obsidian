@@ -26,6 +26,8 @@ Canonical terms for the `markdownlint-obsidian` domain. All code, docs, and BDD 
 | **BlockRef** | A block-level anchor (`^blockid`) or reference (`[[page#^blockid]]`) |
 | **Callout** | An Obsidian admonition block: `> [!TYPE] Title` |
 | **Resolution** | The process of matching a Wikilink target to an actual file in the VaultIndex |
+| **ResolveMode** | The configured wikilink matching strategy: `path-relative` or `obsidian-fuzzy` |
+| **PathSuffixMatch** | An `obsidian-fuzzy` resolution step where a path-like target matches trailing path segments, such as `[[sources/foo]]` resolving to `wiki/sources/foo.md` |
 
 ## Config Bounded Context
 

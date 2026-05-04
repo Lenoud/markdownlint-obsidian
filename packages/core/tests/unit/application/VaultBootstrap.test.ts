@@ -54,7 +54,10 @@ describe("bootstrapVault", () => {
     });
     expect(result).toEqual({ vault: idx, blockRefs: refs });
     expect(detector.detect).not.toHaveBeenCalled();
-    expect(buildIndex).toHaveBeenCalledWith("/override", { caseSensitive: false });
+    expect(buildIndex).toHaveBeenCalledWith("/override", {
+      caseSensitive: false,
+      resolveMode: "path-relative",
+    });
     expect(buildBlockRefIndex).toHaveBeenCalledTimes(1);
   });
 
@@ -71,7 +74,10 @@ describe("bootstrapVault", () => {
       buildBlockRefIndex,
     });
     expect(detector.detect).toHaveBeenCalledWith("/start");
-    expect(buildIndex).toHaveBeenCalledWith("/detected", { caseSensitive: false });
+    expect(buildIndex).toHaveBeenCalledWith("/detected", {
+      caseSensitive: false,
+      resolveMode: "path-relative",
+    });
     expect(result?.vault).toBe(idx);
     expect(result?.blockRefs).toBe(refs);
   });
@@ -93,13 +99,31 @@ describe("bootstrapVault", () => {
   it("passes caseSensitive from wikilinks config to the index builder", async () => {
     const cfg: LinterConfig = {
       ...DEFAULT_CONFIG,
-      wikilinks: { caseSensitive: true, allowAlias: true },
+      wikilinks: { caseSensitive: true, allowAlias: true, resolveMode: "path-relative" },
     };
     const detector = { detect: vi.fn().mockResolvedValue("/v") };
     const buildIndex = vi.fn().mockResolvedValue(stubIndex("/v"));
     const buildBlockRefIndex = vi.fn().mockResolvedValue(stubBlockRefs());
     await bootstrapVault("/s", cfg, { detector, buildIndex, buildBlockRefIndex });
-    expect(buildIndex).toHaveBeenCalledWith("/v", { caseSensitive: true });
+    expect(buildIndex).toHaveBeenCalledWith("/v", {
+      caseSensitive: true,
+      resolveMode: "path-relative",
+    });
+  });
+
+  it("forwards obsidian-fuzzy resolveMode to the index builder", async () => {
+    const cfg: LinterConfig = {
+      ...DEFAULT_CONFIG,
+      wikilinks: { caseSensitive: false, allowAlias: true, resolveMode: "obsidian-fuzzy" },
+    };
+    const detector = { detect: vi.fn().mockResolvedValue("/v") };
+    const buildIndex = vi.fn().mockResolvedValue(stubIndex("/v"));
+    const buildBlockRefIndex = vi.fn().mockResolvedValue(stubBlockRefs());
+    await bootstrapVault("/s", cfg, { detector, buildIndex, buildBlockRefIndex });
+    expect(buildIndex).toHaveBeenCalledWith("/v", {
+      caseSensitive: false,
+      resolveMode: "obsidian-fuzzy",
+    });
   });
 
   it("invokes buildBlockRefIndex with the file list from the vault", async () => {
