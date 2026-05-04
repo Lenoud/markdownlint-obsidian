@@ -10,6 +10,7 @@ import type {
 } from "../../../../src/infrastructure/rules/standard/MarkdownLintAdapter.js";
 import { runRuleOnSource } from "../helpers/runRuleOnSource.js";
 import { DEFAULT_CONFIG } from "../../../../src/infrastructure/config/defaults.js";
+import { OFM_MD_CONFLICTS } from "../../../../src/infrastructure/rules/standard/OFM_MD_CONFLICTS.js";
 
 /**
  * Build a stub {@link MarkdownLintAdapter} that returns the canned
@@ -246,12 +247,10 @@ describe("extractMdConfig", () => {
     expect(mdc.MD013).toBe(false);
   });
 
-  it("reflects the five Phase 7 OFM conflict disables when translating DEFAULT_CONFIG", () => {
+  it("translates every OFM_MD_CONFLICTS default disable for markdownlint", () => {
     const mdc = extractMdConfig(DEFAULT_CONFIG);
-    expect(mdc.MD013).toBe(false);
-    expect(mdc.MD033).toBe(false);
-    expect(mdc.MD034).toBe(false);
-    expect(mdc.MD041).toBe(false);
-    expect(mdc.MD042).toBe(false);
+    for (const conflict of OFM_MD_CONFLICTS) {
+      expect(mdc[conflict.code]).toBe(false);
+    }
   });
 });
