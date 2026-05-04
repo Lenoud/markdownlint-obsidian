@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.1.0](https://github.com/alisonaquinas/markdownlint-obsidian/compare/markdownlint-obsidian-cliv1.0.8...markdownlint-obsidian-cliv1.1.0) (2026-05-04)
+
+
+### Features
+
+* expose `wikilinks.resolveMode = "obsidian-fuzzy"` through CLI config files ([89d45ad](https://github.com/alisonaquinas/markdownlint-obsidian/commit/89d45ad))
+
+
+### Bug Fixes
+
+* handle markdownlint `deleteCount = -1` sentinel without CLI crashes ([27f845e](https://github.com/alisonaquinas/markdownlint-obsidian/commit/27f845e))
+* require tokenless npm trusted publishing in release workflows ([27bc013](https://github.com/alisonaquinas/markdownlint-obsidian/commit/27bc013))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * markdownlint-obsidian bumped to 1.1.0
+
 ## [1.0.8](https://github.com/alisonaquinas/markdownlint-obsidian/compare/markdownlint-obsidian-cliv1.0.7...markdownlint-obsidian-cliv1.0.8) (2026-04-18)
 
 

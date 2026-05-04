@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/alisonaquinas/markdownlint-obsidian/compare/markdownlint-obsidianv1.0.2...markdownlint-obsidianv1.1.0) (2026-05-04)
+
+
+### Features
+
+* add `wikilinks.resolveMode = "obsidian-fuzzy"` for mixed-namespace vaults ([89d45ad](https://github.com/alisonaquinas/markdownlint-obsidian/commit/89d45ad))
+
+
+### Bug Fixes
+
+* handle markdownlint `deleteCount = -1` sentinel without crashing ([27f845e](https://github.com/alisonaquinas/markdownlint-obsidian/commit/27f845e))
+
 ## [1.0.2](https://github.com/alisonaquinas/markdownlint-obsidian/compare/markdownlint-obsidianv1.0.1...markdownlint-obsidianv1.0.2) (2026-04-18)
 
 
