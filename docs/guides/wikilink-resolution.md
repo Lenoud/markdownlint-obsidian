@@ -42,6 +42,10 @@ Boundary alignment keeps the match conceptual: the trailing _n_ path
 segments of the candidate equal the target. `super-sources/foo.md` is
 **not** a valid match for `[[sources/foo]]`.
 
+Path-suffix matching only applies to path-like targets containing `/`. Bare
+targets like `[[foo]]` are still basename matches, even in `obsidian-fuzzy`
+mode.
+
 When more than one file ends with the same suffix, the result is
 `ambiguous` so OFM004 surfaces the conflict instead of an arbitrary
 winner.
