@@ -147,13 +147,28 @@ describe("matchWikilink — obsidian-fuzzy resolveMode (issue #27)", () => {
 
   it("bare targets keep the basename strategy in fuzzy mode", () => {
     const BARE = makeVaultPath(ROOT_M, path.resolve("/m/wiki/foo.md"));
-    const r = matchWikilink("foo", [BARE], {
+    for (const target of ["foo", "foo.md"]) {
+      const r = matchWikilink(target, [BARE], {
+        caseSensitive: false,
+        resolveMode: "obsidian-fuzzy",
+      });
+      expect(r.kind).toBe("resolved");
+      if (r.kind === "resolved") {
+        expect(r.strategy).toBe("basename");
+      }
+    }
+  });
+
+  it("bare targets remain ambiguous by basename in fuzzy mode", () => {
+    const A = makeVaultPath(ROOT_M, path.resolve("/m/wiki/foo.md"));
+    const B = makeVaultPath(ROOT_M, path.resolve("/m/archive/foo.md"));
+    const r = matchWikilink("foo", [A, B], {
       caseSensitive: false,
       resolveMode: "obsidian-fuzzy",
     });
-    expect(r.kind).toBe("resolved");
-    if (r.kind === "resolved") {
-      expect(r.strategy).toBe("basename");
+    expect(r.kind).toBe("ambiguous");
+    if (r.kind === "ambiguous") {
+      expect(r.candidates).toEqual([A, B]);
     }
   });
 
