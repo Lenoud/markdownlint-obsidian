@@ -1,5 +1,11 @@
 # Changelog
 
+<!-- markdownlint-configure-file {
+  "MD024": {
+    "siblings_only": true
+  }
+} -->
+
 All notable changes to `markdownlint-obsidian` are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
