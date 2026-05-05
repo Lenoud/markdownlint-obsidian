@@ -15,6 +15,12 @@ explanation. Rules marked **disabled** collide with OFM syntax and ship
 disabled-by-default; see the conflict page for the rationale and how to
 re-enable the rule if you need it.
 
+The source of truth for disabled standard-MD conflict defaults is
+`packages/core/src/infrastructure/rules/standard/OFM_MD_CONFLICTS.ts`.
+`DEFAULT_CONFIG.rules` derives its MD-prefixed disabled entries from that list,
+and the adapter translates those entries into upstream markdownlint
+configuration before linting.
+
 ## Quick reference
 
 | Code  | Name                         | Default   | OFM conflict note                  |
@@ -73,7 +79,9 @@ per file per lint pass regardless of how many MD rules are enabled, so
 turning every rule on only pays one markdownlint cost per file.
 
 Rule configuration still flows through your standard
-`.obsidian-linter.jsonc`. Use the `rules` block:
+`.obsidian-linter.jsonc`. The `rules` block is deep-merged with built-in
+defaults, so changing one rule does not discard disabled defaults for other OFM
+conflicts. Use the `rules` block:
 
 ```jsonc
 {
@@ -89,3 +97,20 @@ Rule configuration still flows through your standard
 
 `options` are forwarded verbatim to markdownlint — consult the upstream
 rule docs for the full option shapes.
+
+## Fix payload compatibility
+
+Upstream markdownlint rules can emit autofix metadata. Most fixes translate
+directly into the `markdownlint-obsidian` `Fix` model and are applied by
+`--fix` / `--fix-check`.
+
+One upstream shape is intentionally not translated: `fixInfo.deleteCount = -1`.
+Markdownlint uses that value as a sentinel for deleting an entire line,
+including its trailing newline. The `markdownlint-obsidian` fix model is
+single-line and column-based with a non-negative `deleteCount`, so whole-line
+deletion cannot be represented without a separate operation.
+
+When an MD rule emits that sentinel, the adapter reports the underlying MD
+violation without an attached fix. This preserves the actionable diagnostic
+and avoids misreporting the run as `OFM901: Fix.deleteCount must be >= 0`.
+Known upstream rules that use this sentinel include MD012 and MD053.

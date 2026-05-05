@@ -21,6 +21,31 @@ Feature: Callout linting
     When I run markdownlint-obsidian on "notes/index.md"
     Then the exit code is 0
 
+  Scenario: Multi-paragraph callout separator does not report MD028
+    Given a file "notes/index.md" containing:
+      """
+      > [!INFO] Test callout
+      > Line one.
+      >
+      > Line two.
+      """
+    When I run markdownlint-obsidian on "notes/index.md"
+    Then the exit code is 0
+    And error MD028 is not reported
+
+  Scenario: Explicitly re-enabled MD028 reports blank blockquote separators
+    Given a file "notes/index.md" containing:
+      """
+      > [!INFO] Test callout
+      > Line one.
+
+      > Line two.
+      """
+    And rule MD028 is enabled
+    When I run markdownlint-obsidian on "notes/index.md"
+    Then the exit code is 0
+    And error MD028 is reported
+
   Scenario: Custom callout type allowed via config
     Given a file "notes/index.md" containing:
       """

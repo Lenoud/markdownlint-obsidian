@@ -90,7 +90,7 @@ frontmatter, and `OFM9xx` for parser/system errors.
 
 | Code | Name | Description |
 | ---- | ---- | ----------- |
-| OFM901 | internal-parser-error | Unexpected parser failure outside known categories. |
+| [[rules/system/OFM901]] | internal-parser-error | Unexpected parser failure outside known categories. |
 | OFM902 | frontmatter-parse-error | gray-matter / js-yaml could not parse frontmatter. |
 | OFM903 | fix-conflict | Two fixable rules targeted the same character range; the second fix was skipped. |
 | [[rules/system/OFM904]] | duplicate-custom-rule | A custom rule's name already exists; the duplicate was skipped. |
@@ -102,6 +102,8 @@ Phase 7 adopts every upstream markdownlint rule as a first-class rule in
 the registry. See the [[rules/standard-md/index|standard-md catalog]]
 for the enabled/disabled status of every `MDxxx` code and the
 conflict-page links for the rules disabled by default in OFM vaults.
+`OFM_MD_CONFLICTS.ts` is the source of truth for those standard-MD conflict
+defaults.
 
 ## Custom rules (user-defined codes)
 

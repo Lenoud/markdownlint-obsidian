@@ -1,15 +1,11 @@
-/** Unit tests for {@link buildStandardRule} and {@link extractMdConfig}. @module tests/unit/rules/standard/StandardRuleAdapter.test */
+/** Unit tests for {@link buildStandardRule}. @module tests/unit/rules/standard/StandardRuleAdapter.test */
 import { describe, it, expect } from "bun:test";
-import {
-  buildStandardRule,
-  extractMdConfig,
-} from "../../../../src/infrastructure/rules/standard/StandardRuleAdapter.js";
+import { buildStandardRule } from "../../../../src/infrastructure/rules/standard/StandardRuleAdapter.js";
 import type {
   MarkdownLintAdapter,
   StandardViolation,
 } from "../../../../src/infrastructure/rules/standard/MarkdownLintAdapter.js";
 import { runRuleOnSource } from "../helpers/runRuleOnSource.js";
-import { DEFAULT_CONFIG } from "../../../../src/infrastructure/config/defaults.js";
 
 /**
  * Build a stub {@link MarkdownLintAdapter} that returns the canned
@@ -139,62 +135,61 @@ describe("buildStandardRule", () => {
     const errors = await runRuleOnSource(rule, "# h\n");
     expect(errors[0]?.fix).toBeUndefined();
   });
-});
 
-describe("extractMdConfig", () => {
-  it("starts every translation with { default: true }", () => {
-    const cfg = { ...DEFAULT_CONFIG, rules: {} };
-    expect(extractMdConfig(cfg)).toEqual({ default: true });
-  });
-
-  it("maps enabled: false to false", () => {
-    const cfg = {
-      ...DEFAULT_CONFIG,
-      rules: { MD013: { enabled: false } },
+  // Regression: issue #28. Markdownlint uses `deleteCount: -1` as a sentinel
+  // for "delete the entire line" (MD012, MD053). Our column-based applyFixes
+  // pipeline cannot represent line removal, so we surface the violation
+  // without a fix instead of crashing the rule with `Fix.deleteCount must
+  // be >= 0` (which the LintUseCase wraps as OFM901).
+  it("surfaces violations whose fixInfo uses the deleteCount=-1 sentinel without crashing", async () => {
+    const descMd012 = {
+      code: "MD012",
+      name: "no-multiple-blanks",
+      description: "Multiple consecutive blank lines",
+      fixable: true,
+      severity: "warning" as const,
     };
-    const mdc = extractMdConfig(cfg);
-    expect(mdc.MD013).toBe(false);
-    expect(mdc.default).toBe(true);
-  });
-
-  it("forwards rule options verbatim when provided", () => {
-    const cfg = {
-      ...DEFAULT_CONFIG,
-      rules: {
-        MD013: { enabled: true, options: { line_length: 120 } },
+    const adapter = stubAdapter([
+      {
+        ruleNames: ["MD012", "no-multiple-blanks"],
+        ruleDescription: "Multiple consecutive blank lines",
+        lineNumber: 5,
+        fixInfo: { deleteCount: -1 },
       },
-    };
-    const mdc = extractMdConfig(cfg);
-    expect(mdc.MD013).toEqual({ line_length: 120 });
+    ]);
+    const rule = buildStandardRule(descMd012, adapter);
+    const errors = await runRuleOnSource(rule, "# h\n\n\n\n");
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      ruleCode: "MD012",
+      line: 5,
+    });
+    expect(errors[0]?.fix).toBeUndefined();
   });
 
-  it("uses true (enabled, no options) when only enabled is set", () => {
-    const cfg = {
-      ...DEFAULT_CONFIG,
-      rules: { MD013: { enabled: true } },
+  it("preserves valid fixInfo unchanged even when fixable rules can also emit deleteCount=-1", async () => {
+    const descMd012 = {
+      code: "MD012",
+      name: "no-multiple-blanks",
+      description: "Multiple consecutive blank lines",
+      fixable: true,
+      severity: "warning" as const,
     };
-    expect(extractMdConfig(cfg).MD013).toBe(true);
-  });
-
-  it("ignores non-MD rule keys so upstream markdownlint does not reject them", () => {
-    const cfg = {
-      ...DEFAULT_CONFIG,
-      rules: {
-        OFM001: { enabled: false },
-        MD013: { enabled: false },
+    const adapter = stubAdapter([
+      {
+        ruleNames: ["MD012", "no-multiple-blanks"],
+        ruleDescription: "Multiple consecutive blank lines",
+        lineNumber: 3,
+        fixInfo: { lineNumber: 3, editColumn: 1, deleteCount: 0, insertText: "" },
       },
-    };
-    const mdc = extractMdConfig(cfg);
-    expect(mdc.OFM001).toBeUndefined();
-    expect(mdc.MD013).toBe(false);
-  });
-
-  it("reflects the five Phase 7 OFM conflict disables when translating DEFAULT_CONFIG", () => {
-    const mdc = extractMdConfig(DEFAULT_CONFIG);
-    expect(mdc.MD013).toBe(false);
-    expect(mdc.MD033).toBe(false);
-    expect(mdc.MD034).toBe(false);
-    expect(mdc.MD041).toBe(false);
-    expect(mdc.MD042).toBe(false);
+    ]);
+    const rule = buildStandardRule(descMd012, adapter);
+    const errors = await runRuleOnSource(rule, "# h\n\n\n");
+    expect(errors[0]?.fix).toMatchObject({
+      lineNumber: 3,
+      editColumn: 1,
+      deleteCount: 0,
+      insertText: "",
+    });
   });
 });

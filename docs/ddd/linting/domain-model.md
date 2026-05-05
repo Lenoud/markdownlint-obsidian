@@ -19,6 +19,27 @@ interface LintError {
 }
 ```
 
+### Fix
+
+Immutable. A single-line, column-based text edit attached to a `LintError`
+when a rule can safely repair the violation.
+
+```typescript
+interface Fix {
+  readonly lineNumber: number;   // 1-based
+  readonly editColumn: number;   // 1-based
+  readonly deleteCount: number;  // >= 0
+  readonly insertText: string;
+}
+```
+
+The domain deliberately rejects negative `deleteCount` values. Upstream
+markdownlint uses `deleteCount: -1` as a sentinel for deleting an entire line,
+including its trailing newline. That operation is not representable in this
+column-span model, so the standard-rule adapter drops that fix payload and
+still reports the underlying `MDxxx` violation. This prevents unrepresentable
+fixes from escaping as `OFM901` internal parser errors.
+
 ### LintResult
 
 Immutable. All errors for one file.
@@ -43,6 +64,12 @@ interface RuleRegistry {
   all(): readonly OFMRule[];
 }
 ```
+
+The registry contains both OFM-native rules and wrapped standard markdownlint
+rules. A rule can be registered but inactive for a given `LintRun` when
+`LinterConfig.rules[code].enabled === false`. OFM-conflicting standard rules
+such as MD028 use this model: they stay available for explicit user opt-in, but
+the default config suppresses them before markdownlint runs.
 
 ## Rule Contract
 

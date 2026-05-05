@@ -42,7 +42,11 @@ const MD_CONFLICT_OVERRIDES: Readonly<Record<string, RuleConfig>> = Object.freez
 export const DEFAULT_CONFIG: LinterConfig = Object.freeze({
   vaultRoot: null,
   resolve: true,
-  wikilinks: Object.freeze({ caseSensitive: false, allowAlias: true }),
+  wikilinks: Object.freeze({
+    caseSensitive: false,
+    allowAlias: true,
+    resolveMode: "path-relative",
+  }),
   callouts: Object.freeze({
     allowList: Object.freeze([
       "NOTE",

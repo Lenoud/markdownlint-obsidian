@@ -62,6 +62,21 @@ Given(
   },
 );
 
+Given("the wikilink resolveMode is {string}", async function (this: OFMWorld, mode: string) {
+  if (!this.vaultDir) await this.initVault();
+  if (mode !== "path-relative" && mode !== "obsidian-fuzzy") {
+    throw new Error(`unsupported wikilink resolveMode: ${mode}`);
+  }
+  const cfg = {
+    wikilinks: {
+      caseSensitive: false,
+      allowAlias: true,
+      resolveMode: mode,
+    },
+  };
+  await this.writeFile(".obsidian-linter.jsonc", JSON.stringify(cfg));
+});
+
 Given("a vault with no lint errors", async function (this: OFMWorld) {
   await this.initVault();
   await this.writeFile("notes/clean.md", "# Clean\n");
@@ -215,6 +230,16 @@ Given("the config allowList includes {string}", async function (this: OFMWorld, 
     },
   };
   await this.writeFile(".obsidian-linter.jsonc", JSON.stringify(cfg));
+});
+
+// ---- Phase 7 standard markdownlint steps ----------------------------------
+
+Given("rule {word} is enabled", async function (this: OFMWorld, code: string) {
+  if (!this.vaultDir) await this.initVault();
+  await this.writeFile(
+    ".obsidian-linter.jsonc",
+    JSON.stringify({ rules: { [code]: { enabled: true } } }),
+  );
 });
 
 // ---- Phase 6 highlight steps ----------------------------------------------
