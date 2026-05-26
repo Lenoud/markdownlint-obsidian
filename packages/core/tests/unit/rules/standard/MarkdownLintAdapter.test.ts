@@ -40,6 +40,23 @@ describe("MarkdownLintAdapter", () => {
     expect(results).toEqual([]);
   });
 
+  it("does not report heading blank-line fixes inside YAML frontmatter", () => {
+    const adapter = makeMarkdownLintAdapter();
+    const source = [
+      "---",
+      "作者:",
+      "  - Stars",
+      "创建日期: 2026-05-07T11:21:28",
+      "---",
+      "## 1、[[Flash]]",
+      "",
+    ].join("\n");
+
+    const results = adapter.runOnce("frontmatter.md", source, { default: true });
+
+    expect(results.some((r) => r.ruleNames.includes("MD022") && r.lineNumber < 6)).toBe(false);
+  });
+
   it("surfaces MD001 (heading-increment) violations with fixInfo when markdownlint provides it", () => {
     const adapter = makeMarkdownLintAdapter();
     const results = adapter.runOnce("skip.md", "# h1\n\n### skipped h2\n", { default: true });

@@ -71,6 +71,17 @@ describe("applyFixes", () => {
     expect(conflicts).toHaveLength(0);
   });
 
+  it("deduplicates identical zero-width insertions at the same column", () => {
+    const raw = "## First\n## Second";
+    const fixA = makeFix({ lineNumber: 2, editColumn: 1, deleteCount: 0, insertText: "\n" });
+    const fixB = makeFix({ lineNumber: 2, editColumn: 1, deleteCount: 0, insertText: "\n" });
+
+    const { patched, conflicts } = applyFixes(raw, [fixA, fixB]);
+
+    expect(patched).toBe("## First\n\n## Second");
+    expect(conflicts).toHaveLength(0);
+  });
+
   it("performs a pure deletion (insertText: empty string)", () => {
     const raw = "hel lo";
     // Delete the space at col 4 (deleteCount 1, no insert)

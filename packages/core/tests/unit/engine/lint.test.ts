@@ -70,4 +70,76 @@ describe("engine.lint()", () => {
       await fs.rm(tmpDir, { recursive: true, force: true });
     }
   });
+
+  it("uses explicit vaultRoot as the base for configured globs", async () => {
+    const callerDir = await fs.mkdtemp(path.join(os.tmpdir(), "ofm-engine-caller-"));
+    const vaultDir = await makeTmpVault();
+    try {
+      await fs.writeFile(path.join(callerDir, "outside.md"), "# Outside\n");
+      const notePath = path.join(vaultDir, "note.md");
+      await fs.writeFile(notePath, "# Note\n");
+      await fs.writeFile(
+        path.join(vaultDir, ".obsidian-linter.jsonc"),
+        JSON.stringify({ globs: ["**/*.md"] }),
+      );
+
+      const results = await lint({
+        globs: [],
+        cwd: callerDir,
+        config: vaultDir,
+        vaultRoot: vaultDir,
+      });
+
+      expect(results.map((result) => result.filePath)).toEqual([notePath]);
+    } finally {
+      await fs.rm(callerDir, { recursive: true, force: true });
+      await fs.rm(vaultDir, { recursive: true, force: true });
+    }
+  });
+
+  it("resolves explicit relative vaultRoot from cwd", async () => {
+    const callerDir = await fs.mkdtemp(path.join(os.tmpdir(), "ofm-engine-caller-"));
+    const vaultDir = path.join(callerDir, "vault");
+    try {
+      await fs.mkdir(path.join(vaultDir, ".obsidian"), { recursive: true });
+      await fs.writeFile(path.join(callerDir, "outside.md"), "# Outside\n");
+      const notePath = path.join(vaultDir, "note.md");
+      await fs.writeFile(notePath, "# Note\n");
+
+      const results = await lint({
+        globs: [],
+        cwd: callerDir,
+        vaultRoot: "vault",
+      });
+
+      expect(results.map((result) => result.filePath)).toEqual([notePath]);
+    } finally {
+      await fs.rm(callerDir, { recursive: true, force: true });
+    }
+  });
+
+  it("resolves configured vaultRoot relative to an explicit config directory", async () => {
+    const callerDir = await fs.mkdtemp(path.join(os.tmpdir(), "ofm-engine-caller-"));
+    const vaultDir = await makeTmpVault();
+    try {
+      await fs.writeFile(path.join(callerDir, "outside.md"), "# Outside\n");
+      const notePath = path.join(vaultDir, "note.md");
+      await fs.writeFile(notePath, "# Note\n");
+      await fs.writeFile(
+        path.join(vaultDir, ".obsidian-linter.jsonc"),
+        JSON.stringify({ vaultRoot: "./", globs: ["**/*.md"] }),
+      );
+
+      const results = await lint({
+        globs: [],
+        cwd: callerDir,
+        config: vaultDir,
+      });
+
+      expect(results.map((result) => result.filePath)).toEqual([notePath]);
+    } finally {
+      await fs.rm(callerDir, { recursive: true, force: true });
+      await fs.rm(vaultDir, { recursive: true, force: true });
+    }
+  });
 });

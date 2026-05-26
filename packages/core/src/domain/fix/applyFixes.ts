@@ -61,6 +61,7 @@ function applyLineGroup(
   const accepted: Fix[] = [];
 
   for (const fix of sorted) {
+    if (accepted.some((a) => sameEdit(a, fix))) continue;
     const overlapping = accepted.find((a) => rangesIntersect(a, fix));
     if (overlapping !== undefined) {
       conflicts.push({
@@ -83,10 +84,19 @@ function spliceLine(lines: string[], lineNumber: number, fix: Fix): void {
   lines[idx] = line.slice(0, col) + fix.insertText + line.slice(col + fix.deleteCount);
 }
 
+function sameEdit(a: Fix, b: Fix): boolean {
+  return (
+    a.lineNumber === b.lineNumber &&
+    a.editColumn === b.editColumn &&
+    a.deleteCount === b.deleteCount &&
+    a.insertText === b.insertText
+  );
+}
+
 function rangesIntersect(a: Fix, b: Fix): boolean {
   const aEnd = a.editColumn + a.deleteCount;
   const bEnd = b.editColumn + b.deleteCount;
-  // Same anchor always conflicts (catches zero-width insertion vs deletion at same column).
+  // Same anchor conflicts after exact duplicate edits have already been deduplicated.
   if (a.editColumn === b.editColumn) return true;
   // Standard half-open interval overlap check.
   return a.editColumn < bEnd && b.editColumn < aEnd;

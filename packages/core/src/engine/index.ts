@@ -9,6 +9,7 @@
  */
 
 import * as fs from "node:fs/promises";
+import * as path from "node:path";
 import { loadConfig } from "../infrastructure/config/ConfigLoader.js";
 import { discoverFiles as discoverFilesRaw } from "../infrastructure/discovery/FileDiscovery.js";
 import { makeMarkdownItParser } from "../infrastructure/parser/MarkdownItParser.js";
@@ -76,14 +77,6 @@ export interface FixOptions extends LintOptions {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-function applyOverrides(config: LinterConfig, options: LintOptions): LinterConfig {
-  return {
-    ...config,
-    ...(options.vaultRoot !== undefined && { vaultRoot: options.vaultRoot }),
-    ...(options.resolve !== undefined && { resolve: options.resolve }),
-  };
-}
-
 async function buildRegistry(
   config: LinterConfig,
   cwd: string,
@@ -104,8 +97,64 @@ interface VaultContext {
   readonly blockRefIndex: BlockRefIndex | null;
 }
 
+interface FixIo {
+  readonly readFile: (absolute: string) => Promise<string>;
+  readonly writeFile: (absolute: string, content: string) => Promise<void>;
+}
+
 function toVaultContext(result: Awaited<ReturnType<typeof bootstrapVault>>): VaultContext {
   return { vault: result?.vault ?? null, blockRefIndex: result?.blockRefs ?? null };
+}
+
+function buildFixIo(check: boolean | undefined): FixIo {
+  if (!check) return { readFile: readMarkdownFile, writeFile: writeMarkdownFile };
+  const writes = new Map<string, string>();
+  return {
+    readFile: async (absolute) => writes.get(absolute) ?? readMarkdownFile(absolute),
+    writeFile: async (absolute, content): Promise<void> => {
+      writes.set(absolute, content);
+    },
+  };
+}
+
+function resolvePathFrom(baseDir: string, maybeRelative: string): string {
+  return path.isAbsolute(maybeRelative) ? maybeRelative : path.resolve(baseDir, maybeRelative);
+}
+
+function configBaseDir(options: LintOptions, cwd: string): string {
+  if (options.config === undefined) return cwd;
+  const resolved = resolvePathFrom(cwd, options.config);
+  return path.extname(resolved) === "" ? resolved : path.dirname(resolved);
+}
+
+function normalizeEffectiveConfig(
+  config: LinterConfig,
+  options: LintOptions,
+  cwd: string,
+): LinterConfig {
+  const baseDir = configBaseDir(options, cwd);
+  const configVaultRoot =
+    config.vaultRoot === null ? null : resolvePathFrom(baseDir, config.vaultRoot);
+  const vaultRoot =
+    options.vaultRoot === undefined ? configVaultRoot : resolvePathFrom(cwd, options.vaultRoot);
+  return {
+    ...config,
+    vaultRoot,
+    ...(options.resolve !== undefined && { resolve: options.resolve }),
+  };
+}
+
+function globBaseDir(config: LinterConfig, cwd: string): string {
+  return config.vaultRoot === null ? cwd : config.vaultRoot;
+}
+
+async function discoverConfiguredFiles(
+  options: LintOptions,
+  config: LinterConfig,
+  cwd: string,
+): Promise<string[]> {
+  const effectiveGlobs = options.globs.length > 0 ? options.globs : config.globs;
+  return discoverFilesRaw(effectiveGlobs, config.ignores, globBaseDir(config, cwd));
 }
 
 async function tryBootstrapVault(
@@ -146,10 +195,9 @@ async function tryBootstrapVault(
 export async function lint(options: LintOptions): Promise<LintResult[]> {
   const cwd = options.cwd ?? process.cwd();
   const config = await loadConfig(options.config ?? cwd);
-  const effectiveConfig = applyOverrides(config, options);
+  const effectiveConfig = normalizeEffectiveConfig(config, options, cwd);
 
-  const effectiveGlobs = options.globs.length > 0 ? options.globs : effectiveConfig.globs;
-  const filePaths = await discoverFilesRaw(effectiveGlobs, effectiveConfig.ignores, cwd);
+  const filePaths = await discoverConfiguredFiles(options, effectiveConfig, cwd);
   if (filePaths.length === 0) return [];
 
   const parser = makeMarkdownItParser();
@@ -178,10 +226,9 @@ export async function lint(options: LintOptions): Promise<LintResult[]> {
 export async function fix(options: FixOptions): Promise<FixOutcome> {
   const cwd = options.cwd ?? process.cwd();
   const config = await loadConfig(options.config ?? cwd);
-  const effectiveConfig = applyOverrides(config, options);
+  const effectiveConfig = normalizeEffectiveConfig(config, options, cwd);
 
-  const effectiveGlobs = options.globs.length > 0 ? options.globs : effectiveConfig.globs;
-  const filePaths = await discoverFilesRaw(effectiveGlobs, effectiveConfig.ignores, cwd);
+  const filePaths = await discoverConfiguredFiles(options, effectiveConfig, cwd);
   if (filePaths.length === 0) {
     return { firstPass: [], finalPass: [], filesFixed: [], conflicts: [] };
   }
@@ -190,11 +237,11 @@ export async function fix(options: FixOptions): Promise<FixOutcome> {
   const registry = await buildRegistry(effectiveConfig, cwd, options.onCustomRuleError);
   const { vault, blockRefIndex } = await tryBootstrapVault(cwd, effectiveConfig, parser);
 
-  const noOpWrite = async (_path: string, _content: string): Promise<void> => {};
+  const io = buildFixIo(options.check);
   const deps = {
     parser,
-    readFile: readMarkdownFile,
-    writeFile: options.check ? noOpWrite : writeMarkdownFile,
+    readFile: io.readFile,
+    writeFile: io.writeFile,
     vault,
     blockRefIndex,
     fsCheck: makeNodeFsExistenceChecker(),

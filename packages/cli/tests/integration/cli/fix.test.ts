@@ -39,6 +39,7 @@ describe("--fix and --fix-check round-trip", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("Would fix 1 file(s)");
+    expect(result.stdout).toBe("");
     const content = await fs.readFile(filePath, "utf8");
     expect(content).toBe(original); // file must be unchanged on disk
   });
@@ -60,5 +61,48 @@ describe("--fix and --fix-check round-trip", () => {
     const content = await fs.readFile(filePath, "utf8");
     // Both trailing slashes must have been removed by OFM063
     expect(content).not.toContain("/");
+  });
+
+  it("--fix uses --vault-root as the default glob base when globs are omitted", async () => {
+    const caller = path.join(tmp, "caller");
+    const vault = path.join(caller, "vault");
+    await fs.mkdir(path.join(caller, ".git"), { recursive: true });
+    await fs.mkdir(path.join(vault, ".obsidian"), { recursive: true });
+    const outsidePath = path.join(caller, "outside.md");
+    const targetPath = path.join(vault, "target.md");
+    const configPath = path.join(vault, ".obsidian-linter.jsonc");
+    await fs.writeFile(outsidePath, "# Outside\n\n#outside/\n");
+    await fs.writeFile(targetPath, "# Target\n\n#target/\n");
+    await fs.writeFile(configPath, JSON.stringify({ globs: ["**/*.md"] }));
+
+    const result = await spawnCli(
+      ["--config", configPath, "--vault-root", "vault", "--fix"],
+      caller,
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toContain("Fixed 1 file(s)");
+    expect(await fs.readFile(outsidePath, "utf8")).toBe("# Outside\n\n#outside/\n");
+    expect(await fs.readFile(targetPath, "utf8")).toBe("# Target\n\n#target\n");
+  });
+
+  it("--fix resolves config vaultRoot relative to the explicit config path", async () => {
+    const caller = path.join(tmp, "caller");
+    const vault = path.join(tmp, "vault");
+    await fs.mkdir(path.join(caller, ".git"), { recursive: true });
+    await fs.mkdir(path.join(vault, ".obsidian"), { recursive: true });
+    const outsidePath = path.join(caller, "outside.md");
+    const targetPath = path.join(vault, "target.md");
+    const configPath = path.join(vault, ".obsidian-linter.jsonc");
+    await fs.writeFile(outsidePath, "# Outside\n\n#outside/\n");
+    await fs.writeFile(targetPath, "# Target\n\n#target/\n");
+    await fs.writeFile(configPath, JSON.stringify({ vaultRoot: "./", globs: ["**/*.md"] }));
+
+    const result = await spawnCli(["--config", configPath, "--fix"], caller);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toContain("Fixed 1 file(s)");
+    expect(await fs.readFile(outsidePath, "utf8")).toBe("# Outside\n\n#outside/\n");
+    expect(await fs.readFile(targetPath, "utf8")).toBe("# Target\n\n#target\n");
   });
 });

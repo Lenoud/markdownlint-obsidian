@@ -35,4 +35,14 @@ describe("discoverFiles", () => {
     expect(files).toHaveLength(1);
     expect(files[0]).toContain("a.md");
   });
+
+  it("filters directory globs to markdown files only", async () => {
+    await fs.mkdir(path.join(tmpDir, "assets"));
+    await fs.writeFile(path.join(tmpDir, "assets", "image.png"), "#not/a/markdown-note\n");
+    await fs.writeFile(path.join(tmpDir, "debug"), "#not/a/markdown-note\n");
+
+    const files = await discoverFiles(["./"], [], tmpDir);
+
+    expect(files.map((f) => path.relative(tmpDir, f))).toEqual(["a.md", "sub/c.md"]);
+  });
 });

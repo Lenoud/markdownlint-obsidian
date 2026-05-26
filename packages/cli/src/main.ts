@@ -112,6 +112,10 @@ function onCustomRuleError(modulePath: string, message: string): void {
   process.stderr.write(`OFM905: failed to load custom rule module "${modulePath}": ${message}\n`);
 }
 
+function fixBranchExitCode(finalCode: number, opts: ParsedOptions, fixedCount: number): number {
+  return opts.fixCheck && fixedCount > 0 ? EXIT_CODES.LINT_ERRORS : finalCode;
+}
+
 function buildEngineOptions(
   globArgs: readonly string[],
   config: Awaited<ReturnType<typeof loadConfig>>,
@@ -146,7 +150,8 @@ async function runFixBranch(engineOptions: object, opts: ParsedOptions): Promise
         `[fix-conflict] ${conflict.filePath}: ${conflict.reason} (${colA} vs ${colB})\n`,
       );
     }
-    return emitAndExit(outcome.finalPass, opts.outputFormatter);
+    const finalCode = emitAndExit(outcome.finalPass, opts.outputFormatter);
+    return fixBranchExitCode(finalCode, opts, outcome.filesFixed.length);
   } catch (err) {
     process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
     return EXIT_CODES.TOOL_FAILURE;

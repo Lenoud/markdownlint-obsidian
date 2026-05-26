@@ -11,6 +11,8 @@
  */
 import { globby } from "globby";
 
+const MARKDOWN_EXTENSIONS = new Set([".md", ".markdown"]);
+
 /**
  * Discover files matching `globs`, excluding paths that match `ignores`.
  *
@@ -36,5 +38,10 @@ export async function discoverFiles(
     dot: false,
   });
 
-  return files.sort();
+  return files.filter((file) => MARKDOWN_EXTENSIONS.has(extensionOf(file))).sort();
+}
+
+function extensionOf(filePath: string): string {
+  const index = filePath.lastIndexOf(".");
+  return index === -1 ? "" : filePath.slice(index).toLowerCase();
 }

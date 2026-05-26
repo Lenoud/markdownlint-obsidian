@@ -36,11 +36,11 @@ export interface StandardRuleDescriptor {
  * would surface as `OFM901: Fix.deleteCount must be >= 0` against the
  * file root — issue #28.
  */
-function fixInfoToFix(fi: FixInfo, fallbackLine: number): Fix | undefined {
+function fixInfoToFix(fi: FixInfo, fallbackLine: number, lineOffset = 0): Fix | undefined {
   const rawDelete = fi.deleteCount ?? 0;
   if (rawDelete < 0) return undefined;
   return makeFix({
-    lineNumber: fi.lineNumber ?? fallbackLine,
+    lineNumber: (fi.lineNumber ?? fallbackLine) + lineOffset,
     editColumn: fi.editColumn ?? 1,
     deleteCount: rawDelete,
     insertText: fi.insertText ?? "",
@@ -54,14 +54,14 @@ function fixInfoToFix(fi: FixInfo, fallbackLine: number): Fix | undefined {
  * be resolved (see {@link fixInfoToFix}) yields a fix-less payload so
  * the violation still reaches the user.
  */
-function buildErrorPayload(v: StandardViolation): Parameters<OnErrorCallback>[0] {
+function buildErrorPayload(v: StandardViolation, lineOffset = 0): Parameters<OnErrorCallback>[0] {
   const base = {
-    line: v.lineNumber,
+    line: v.lineNumber + lineOffset,
     column: v.errorRange?.[0] ?? 1,
     message: v.errorDetail ? `${v.ruleDescription}: ${v.errorDetail}` : v.ruleDescription,
   };
   if (v.fixInfo === undefined) return base;
-  const fix = fixInfoToFix(v.fixInfo, v.lineNumber);
+  const fix = fixInfoToFix(v.fixInfo, v.lineNumber, lineOffset);
   return fix === undefined ? base : { ...base, fix };
 }
 
@@ -90,9 +90,10 @@ export function buildStandardRule(
     run({ filePath, parsed, config }: RuleParams, onError: OnErrorCallback): void {
       const mdConfig = extractMdConfig(config);
       const violations = adapter.runOnce(filePath, parsed.raw, mdConfig);
+      const lineOffset = parsed.frontmatterEndLine;
       for (const v of violations) {
         if (!v.ruleNames.includes(desc.code)) continue;
-        onError(buildErrorPayload(v));
+        onError(buildErrorPayload(v, lineOffset));
       }
     },
   };
