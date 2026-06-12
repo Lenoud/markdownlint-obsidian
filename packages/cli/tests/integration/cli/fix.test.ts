@@ -44,6 +44,31 @@ describe("--fix and --fix-check round-trip", () => {
     expect(content).toBe(original); // file must be unchanged on disk
   });
 
+  it("honors fix: true from config", async () => {
+    const filePath = path.join(tmp, "test.md");
+    await fs.writeFile(filePath, "# Test\n\n#project/\n");
+    await fs.writeFile(path.join(tmp, ".obsidian-linter.jsonc"), JSON.stringify({ fix: true }));
+
+    const result = await spawnCli(["**/*.md"], tmp);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toContain("Fixed 1 file(s)");
+    expect(await fs.readFile(filePath, "utf8")).toBe("# Test\n\n#project\n");
+  });
+
+  it("--fix-check stays dry-run when config has fix: true", async () => {
+    const filePath = path.join(tmp, "test.md");
+    const original = "# Test\n\n#project/\n";
+    await fs.writeFile(filePath, original);
+    await fs.writeFile(path.join(tmp, ".obsidian-linter.jsonc"), JSON.stringify({ fix: true }));
+
+    const result = await spawnCli(["--fix-check", "**/*.md"], tmp);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Would fix 1 file(s)");
+    expect(await fs.readFile(filePath, "utf8")).toBe(original);
+  });
+
   it("--fix reports [fix-conflict] when two fixable rules overlap on the same line", async () => {
     const filePath = path.join(tmp, "test-conflict.md");
     // Line 1: #area/ — OFM063 fires (trailing slash)

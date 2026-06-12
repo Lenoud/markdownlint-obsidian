@@ -51,6 +51,24 @@ describe("CLI formatter wiring", () => {
     expect(parsed.some((r) => r.filePath.endsWith("broken.md"))).toBe(true);
   });
 
+  it("uses outputFormatter from config when CLI flag is omitted", async () => {
+    await fs.writeFile(
+      path.join(tmp, ".obsidian-linter.jsonc"),
+      JSON.stringify({ outputFormatter: "json" }),
+    );
+    try {
+      const { stdout } = await execAsync(BUN, [BIN, "**/*.md"], { cwd: tmp });
+      const parsed = JSON.parse(stdout) as Array<{ filePath: string }>;
+      expect(parsed.some((r) => r.filePath.endsWith("broken.md"))).toBe(true);
+    } catch (err) {
+      const e = err as { stdout?: string };
+      const parsed = JSON.parse(e.stdout ?? "[]") as Array<{ filePath: string }>;
+      expect(parsed.some((r) => r.filePath.endsWith("broken.md"))).toBe(true);
+    } finally {
+      await fs.rm(path.join(tmp, ".obsidian-linter.jsonc"), { force: true });
+    }
+  });
+
   it("junit formatter emits parseable XML with a testsuite", async () => {
     const { stdout } = await runCli("junit");
     expect(stdout).toContain("<?xml");

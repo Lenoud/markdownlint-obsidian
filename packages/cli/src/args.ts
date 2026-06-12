@@ -22,20 +22,18 @@ const { version } = require("../package.json") as { version: string };
  * existing muscle memory and automation.
  */
 export interface CLIArgs {
-  readonly globs: string[];
   readonly config?: string;
   readonly configPointer?: string;
   readonly fix: boolean;
   readonly fixCheck: boolean;
-  readonly format: boolean;
-  readonly noGlobs: boolean;
+  readonly globs: boolean;
   readonly vaultRoot?: string;
   /**
    * Commander maps `--no-resolve` to `resolve: false`. Left `undefined`
    * when the flag is not supplied so config-level `resolve` can win.
    */
   readonly resolve?: boolean;
-  readonly outputFormatter: string;
+  readonly outputFormatter?: string;
 }
 
 /**
@@ -58,14 +56,9 @@ export function buildProgram(): Command {
     .option("--config-pointer <ptr>", "JSON Pointer into config (e.g. #/markdownlint)")
     .option("--fix", "Auto-fix fixable errors in-place", false)
     .option("--fix-check", "Check if fixes are needed without writing files", false)
-    .option("--format", "Read stdin, write linted content to stdout", false)
     .option("--no-globs", "Ignore globs property in config file")
     .option("--vault-root <path>", "Override auto-detected vault root")
     .option("--no-resolve", "Disable wikilink resolution")
-    .option(
-      "--output-formatter <name>",
-      "Output formatter (default, json, junit, sarif)",
-      "default",
-    );
+    .option("--output-formatter <name>", "Output formatter (default, json, junit, sarif)");
   return program;
 }

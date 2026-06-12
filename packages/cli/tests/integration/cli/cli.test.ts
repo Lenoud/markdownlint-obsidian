@@ -67,6 +67,73 @@ describe("CLI", () => {
     }
   });
 
+  it("--config reads an explicit custom config file", async () => {
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "ofm-cli-test-"));
+    await fs.mkdir(path.join(tmp, ".obsidian"), { recursive: true });
+    await fs.writeFile(path.join(tmp, "note.md"), "[[missing]]\n");
+    const configPath = path.join(tmp, "custom.jsonc");
+    await fs.writeFile(configPath, JSON.stringify({ rules: { OFM001: { enabled: false } } }));
+    try {
+      const result = await spawnCli(["--config", configPath, "note.md"], tmp);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).not.toContain("OFM001");
+    } finally {
+      await fs.rm(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it("--config-pointer selects a nested config object", async () => {
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "ofm-cli-test-"));
+    await fs.mkdir(path.join(tmp, ".obsidian"), { recursive: true });
+    await fs.writeFile(path.join(tmp, "note.md"), "[[missing]]\n");
+    const configPath = path.join(tmp, "package.json");
+    await fs.writeFile(
+      configPath,
+      JSON.stringify({ markdownlint: { rules: { OFM001: { enabled: false } } } }),
+    );
+    try {
+      const result = await spawnCli(
+        ["--config", configPath, "--config-pointer", "#/markdownlint", "note.md"],
+        tmp,
+      );
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).not.toContain("OFM001");
+    } finally {
+      await fs.rm(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it("--no-globs ignores config globs when no positional globs are supplied", async () => {
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "ofm-cli-test-"));
+    await fs.mkdir(path.join(tmp, ".obsidian"), { recursive: true });
+    await fs.writeFile(path.join(tmp, "note.md"), "#project/\n");
+    await fs.writeFile(
+      path.join(tmp, ".obsidian-linter.jsonc"),
+      JSON.stringify({ globs: ["**/*.md"] }),
+    );
+    try {
+      const result = await spawnCli(["--no-globs"], tmp);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe("");
+    } finally {
+      await fs.rm(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it("prints malformed config details and exits 2", async () => {
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "ofm-cli-test-"));
+    await fs.mkdir(path.join(tmp, ".obsidian"), { recursive: true });
+    await fs.writeFile(path.join(tmp, ".obsidian-linter.jsonc"), '{ "resolve": ');
+    try {
+      const result = await spawnCli(["**/*.md"], tmp);
+      expect(result.exitCode).toBe(2);
+      expect(result.stderr).toContain("OFM901: failed to parse config file");
+      expect(result.stderr).toContain(".obsidian-linter.jsonc");
+    } finally {
+      await fs.rm(tmp, { recursive: true, force: true });
+    }
+  });
+
   it("clean directory exits 0 with no output", async () => {
     const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "ofm-cli-test-"));
     // Phase 4 requires a vault root; mark the temp dir as one so the

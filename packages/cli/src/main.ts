@@ -23,7 +23,8 @@ import {
 interface ParsedOptions {
   readonly fix: boolean;
   readonly fixCheck: boolean;
-  readonly format: boolean;
+  readonly configPointer?: string;
+  readonly globs: boolean;
   readonly vaultRoot?: string;
   /**
    * Commander maps `--no-resolve` to `resolve: false` and leaves the default
@@ -32,7 +33,7 @@ interface ParsedOptions {
    * was supplied.
    */
   readonly resolve?: boolean;
-  readonly outputFormatter: string;
+  readonly outputFormatter?: string;
   readonly config?: string;
 }
 
@@ -46,6 +47,10 @@ export const EXIT_CODES = Object.freeze({
   LINT_ERRORS: 1,
   TOOL_FAILURE: 2,
 } as const);
+
+type LoadedConfig = Awaited<ReturnType<typeof loadConfig>>;
+type LoadConfigWithPointer = (startDir: string, configPointer?: string) => Promise<LoadedConfig>;
+const loadConfigWithPointer = loadConfig as LoadConfigWithPointer;
 
 /**
  * Entry point called by `bin/markdownlint-obsidian.js`.
@@ -116,24 +121,24 @@ function fixBranchExitCode(finalCode: number, opts: ParsedOptions, fixedCount: n
   return opts.fixCheck && fixedCount > 0 ? EXIT_CODES.LINT_ERRORS : finalCode;
 }
 
-function buildEngineOptions(
-  globArgs: readonly string[],
-  config: Awaited<ReturnType<typeof loadConfig>>,
-  opts: ParsedOptions,
-  cwd: string,
-): object {
-  const effectiveGlobs = globArgs.length > 0 ? [...globArgs] : config.globs;
+function buildEngineOptions(globArgs: readonly string[], opts: ParsedOptions, cwd: string): object {
   return {
-    globs: effectiveGlobs,
+    globs: [...globArgs],
     cwd,
+    useConfigGlobs: opts.globs,
     ...(opts.vaultRoot !== undefined && { vaultRoot: opts.vaultRoot }),
     ...(opts.resolve === false && { resolve: false }),
     ...(opts.config !== undefined && { config: opts.config }),
+    ...(opts.configPointer !== undefined && { configPointer: opts.configPointer }),
     onCustomRuleError,
   };
 }
 
-async function runFixBranch(engineOptions: object, opts: ParsedOptions): Promise<number> {
+async function runFixBranch(
+  engineOptions: object,
+  opts: ParsedOptions,
+  formatterName: string,
+): Promise<number> {
   try {
     const outcome = await fix({
       ...(engineOptions as Parameters<typeof fix>[0]),
@@ -150,7 +155,7 @@ async function runFixBranch(engineOptions: object, opts: ParsedOptions): Promise
         `[fix-conflict] ${conflict.filePath}: ${conflict.reason} (${colA} vs ${colB})\n`,
       );
     }
-    const finalCode = emitAndExit(outcome.finalPass, opts.outputFormatter);
+    const finalCode = emitAndExit(outcome.finalPass, formatterName);
     return fixBranchExitCode(finalCode, opts, outcome.filesFixed.length);
   } catch (err) {
     process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
@@ -158,10 +163,10 @@ async function runFixBranch(engineOptions: object, opts: ParsedOptions): Promise
   }
 }
 
-async function runLintBranch(engineOptions: object, opts: ParsedOptions): Promise<number> {
+async function runLintBranch(engineOptions: object, formatterName: string): Promise<number> {
   try {
     const results = await lint(engineOptions as Parameters<typeof lint>[0]);
-    return emitAndExit(results, opts.outputFormatter);
+    return emitAndExit(results, formatterName);
   } catch (err) {
     process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
     return EXIT_CODES.TOOL_FAILURE;
@@ -184,16 +189,41 @@ async function runPipeline(
   const exclusionCode = checkMutualExclusion(opts);
   if (exclusionCode !== null) return exclusionCode;
 
-  if (resolveFormatter(opts.outputFormatter) === null) return EXIT_CODES.TOOL_FAILURE;
+  const config = await loadCliConfig(opts, cwd);
+  if (config === null) return EXIT_CODES.TOOL_FAILURE;
 
-  const config = await loadConfig(opts.config ?? cwd).catch(() => null);
-  if (!config) {
-    process.stderr.write("OFM901: failed to load configuration\n");
-    return EXIT_CODES.TOOL_FAILURE;
+  const formatterName = resolveFormatterName(opts, config);
+  if (formatterName === null) return EXIT_CODES.TOOL_FAILURE;
+
+  const engineOptions = buildEngineOptions(globArgs, opts, cwd);
+  return shouldRunFix(opts, config)
+    ? runFixBranch(engineOptions, opts, formatterName)
+    : runLintBranch(engineOptions, formatterName);
+}
+
+async function loadCliConfig(
+  opts: ParsedOptions,
+  cwd: string,
+): Promise<Awaited<ReturnType<typeof loadConfig>> | null> {
+  try {
+    return await loadConfigWithPointer(opts.config ?? cwd, opts.configPointer);
+  } catch (err) {
+    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
+    return null;
   }
+}
 
-  const engineOptions = buildEngineOptions(globArgs, config, opts, cwd);
-  return opts.fix || opts.fixCheck
-    ? runFixBranch(engineOptions, opts)
-    : runLintBranch(engineOptions, opts);
+function resolveFormatterName(
+  opts: ParsedOptions,
+  config: Awaited<ReturnType<typeof loadConfig>>,
+): string | null {
+  const formatterName = opts.outputFormatter ?? config.outputFormatter;
+  return resolveFormatter(formatterName) === null ? null : formatterName;
+}
+
+function shouldRunFix(
+  opts: ParsedOptions,
+  config: Awaited<ReturnType<typeof loadConfig>>,
+): boolean {
+  return opts.fix || opts.fixCheck || config.fix;
 }

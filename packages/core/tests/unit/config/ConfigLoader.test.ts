@@ -41,6 +41,35 @@ describe("ConfigLoader", () => {
     expect(config.resolve).toBe(false);
   });
 
+  it("parses YAML config files", async () => {
+    await fs.writeFile(path.join(tmpDir, ".obsidian-linter.yaml"), "resolve: false\n");
+    const config = await loadConfig(tmpDir);
+    expect(config.resolve).toBe(false);
+  });
+
+  it("throws OFM901 for malformed JSONC config files", async () => {
+    await fs.writeFile(path.join(tmpDir, ".obsidian-linter.jsonc"), '{ "resolve": ');
+    await expect(loadConfig(tmpDir)).rejects.toThrow(/OFM901: failed to parse config file/);
+  });
+
+  it("loads an explicit config file with a custom basename", async () => {
+    const configPath = path.join(tmpDir, "custom-config.jsonc");
+    await fs.writeFile(configPath, JSON.stringify({ resolve: false }));
+    const config = await loadConfig(configPath);
+    expect(config.resolve).toBe(false);
+  });
+
+  it("selects nested config with a JSON Pointer", async () => {
+    const configPath = path.join(tmpDir, "package.json");
+    await fs.writeFile(
+      configPath,
+      JSON.stringify({ markdownlint: { resolve: false, rules: { OFM063: { enabled: false } } } }),
+    );
+    const config = await loadConfig(configPath, "#/markdownlint");
+    expect(config.resolve).toBe(false);
+    expectRuleDisabled(config, "OFM063");
+  });
+
   it("deep-merges the rules block so a user override does not drop defaults", async () => {
     await fs.writeFile(
       path.join(tmpDir, ".obsidian-linter.jsonc"),
@@ -78,5 +107,25 @@ describe("ConfigLoader", () => {
     // Other conflict disables survive.
     expectRuleDisabled(config, "MD028");
     expectRuleDisabled(config, "MD042");
+  });
+
+  it("deep-merges nested option blocks without dropping defaults", async () => {
+    await fs.writeFile(
+      path.join(tmpDir, ".obsidian-linter.jsonc"),
+      JSON.stringify({
+        callouts: { requireTitle: true },
+        embeds: { maxWidth: 800 },
+        frontmatter: { required: ["tags"] },
+      }),
+    );
+    const config = await loadConfig(tmpDir);
+    expect(config.callouts.requireTitle).toBe(true);
+    expect(config.callouts.allowList.length).toBeGreaterThan(0);
+    expect(config.callouts.allowFold).toBe(DEFAULT_CONFIG.callouts.allowFold);
+    expect(config.embeds.maxWidth).toBe(800);
+    expect(config.embeds.allowedExtensions).toEqual(DEFAULT_CONFIG.embeds.allowedExtensions);
+    expect(config.frontmatter.required).toEqual(["tags"]);
+    expect(config.frontmatter.dateFields).toEqual(DEFAULT_CONFIG.frontmatter.dateFields);
+    expect(config.frontmatter.allowUnknown).toBe(DEFAULT_CONFIG.frontmatter.allowUnknown);
   });
 });
