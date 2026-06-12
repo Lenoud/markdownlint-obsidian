@@ -77,7 +77,7 @@ project root.
 ### GitHub Actions
 
 ```yaml
-- uses: alisonaquinas/markdownlint-obsidian/action@v0.8.0
+- uses: alisonaquinas/markdownlint-obsidian/action@v1
   with:
     globs: "**/*.md"
     format: sarif
@@ -93,7 +93,7 @@ project root.
 ```yaml
 # .pre-commit-config.yaml
 - repo: https://github.com/alisonaquinas/markdownlint-obsidian
-  rev: v0.8.0
+  rev: v1
   hooks:
     - id: markdownlint-obsidian
 ```

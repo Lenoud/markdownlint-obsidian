@@ -41,15 +41,13 @@ jobs:
       - name: Build (all packages)
         run: bun run --filter '*' build
 
-      - name: Verify action bundle builds without errors
-        # esbuild module-ordering is platform-specific (Linux vs macOS/Windows),
-        # so a bit-for-bit git diff would always fail on cross-platform teams.
-        # We verify the bundle compiles cleanly; source correctness is covered
-        # by the typecheck step above.
+      - name: Verify action bundle is up to date
         run: |
           cd action
           bun install
           bun run build
+          cd ..
+          git diff --exit-code -- action/dist/main.js
 
   dogfood-published:
     # Lint docs/ using the published markdownlint-obsidian-cli package on

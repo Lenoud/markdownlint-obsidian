@@ -15,7 +15,7 @@ action/
 ├── node_modules/        # action-local deps (not in workspace root node_modules)
 ├── AGENTS.md            # this file
 ├── CLAUDE.md
-└── package.json         # standalone (not a Bun workspace package)
+└── package.json         # Bun workspace package for bundling the action
 ```
 
 ## Workflows
@@ -24,8 +24,8 @@ action/
 
 ```bash
 cd action
-npm install
-npm run build
+bun install
+bun run build
 git add dist/main.js
 ```
 
@@ -49,12 +49,11 @@ updating action dependencies.
 ## Invariants — Do Not Violate
 
 - `dist/main.js` is a committed build artifact. Never edit it by hand.
-  Rebuild with `npm run build` inside `action/`.
-- `action/` uses its own `package.json` and `node_modules/`. Do not add
-  action dependencies to the workspace root.
-- This package must not depend on `packages/core` or `packages/cli` source
-  directly — it depends on the published npm release of
-  `markdownlint-obsidian-cli`.
+  Rebuild with `bun run build` inside `action/`.
+- `action/` participates in the Bun workspace and uses the workspace CLI
+  dependency for local bundling.
+- This package must not import `packages/core` or `packages/cli` source
+  directly — depend on workspace package exports instead.
 
 ## See Also
 

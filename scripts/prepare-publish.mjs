@@ -45,11 +45,9 @@ for (const depKey of depKeys) {
         console.error(`Cannot resolve workspace dep "${depName}" — no matching package.`);
         process.exit(1);
       }
-      finalVersion = `^${wsVersion}`;
-      if (scope) {
-        // For scoped publishes, point the dep at the scoped variant via npm: alias.
-        finalName = `@${scope.replace(/^@/, "")}/${depName}`;
-      }
+      finalVersion = scope
+        ? `npm:@${scope.replace(/^@/, "")}/${depName}@^${wsVersion}`
+        : `^${wsVersion}`;
     }
     rewritten[finalName] = finalVersion;
   }

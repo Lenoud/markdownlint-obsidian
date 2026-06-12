@@ -6,7 +6,7 @@ A JavaScript GitHub Action that lints Obsidian Flavored Markdown with
 ## Usage
 
 ```yaml
-- uses: alisonaquinas/markdownlint-obsidian/action@v0.8.0
+- uses: alisonaquinas/markdownlint-obsidian/action@v1
   with:
     globs: "**/*.md"
     format: default
@@ -33,7 +33,7 @@ A JavaScript GitHub Action that lints Obsidian Flavored Markdown with
 ## SARIF upload recipe
 
 ```yaml
-- uses: alisonaquinas/markdownlint-obsidian/action@v0.8.0
+- uses: alisonaquinas/markdownlint-obsidian/action@v1
   with:
     format: sarif
   id: lint
@@ -49,8 +49,8 @@ This action ships a pre-built bundle at `dist/main.js`. To rebuild:
 
 ```bash
 cd action
-npm install
-npm run build
+bun install
+bun run build
 ```
 
 CI enforces that `action/dist` is up to date via `git diff --exit-code`.

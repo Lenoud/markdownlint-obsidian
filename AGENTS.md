@@ -105,8 +105,8 @@ cd packages/cli && bun run build
 
 ```bash
 cd action
-npm install
-npm run build
+bun install
+bun run build
 ```
 
 The `action/dist/main.js` bundle must be committed. CI enforces this with

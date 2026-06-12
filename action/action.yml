@@ -20,6 +20,13 @@ inputs:
     description: "Exit non-zero on warnings as well as errors"
     required: false
     default: "false"
+outputs:
+  error-count:
+    description: "Total error count across all linted files"
+  warning-count:
+    description: "Total warning count across all linted files"
+  sarif-path:
+    description: "Path to the SARIF output file when format is sarif"
 runs:
   using: "node20"
   main: "dist/main.js"

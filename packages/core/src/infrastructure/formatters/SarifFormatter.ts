@@ -10,12 +10,8 @@
  *
  * @module infrastructure/formatters/SarifFormatter
  */
-import { createRequire } from "node:module";
 import type { LintResult } from "../../domain/linting/LintResult.js";
 import type { LintError } from "../../domain/linting/LintError.js";
-
-const require = createRequire(import.meta.url);
-const { version: TOOL_VERSION } = require("../../../package.json") as { version: string };
 
 const TOOL_NAME = "markdownlint-obsidian";
 const INFORMATION_URI = "https://github.com/alisonaquinas/markdownlint-obsidian";
@@ -62,7 +58,6 @@ export function formatSarif(results: readonly LintResult[]): string {
         tool: {
           driver: {
             name: TOOL_NAME,
-            version: TOOL_VERSION,
             informationUri: INFORMATION_URI,
             rules,
           },

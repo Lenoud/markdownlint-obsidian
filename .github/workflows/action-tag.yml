@@ -14,15 +14,23 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Advance major and minor tags
+      - name: Advance action semver tags from CLI releases
         env:
           TAG: ${{ github.event.release.tag_name }}
         run: |
-          MAJOR=$(echo "$TAG" | cut -d. -f1)
-          MINOR=$(echo "$TAG" | cut -d. -f1,2)
+          case "$TAG" in
+            markdownlint-obsidian-cliv*) ;;
+            *) echo "Skipping non-CLI release tag: $TAG"; exit 0 ;;
+          esac
+          VERSION="${TAG#markdownlint-obsidian-cliv}"
+          MAJOR="v${VERSION%%.*}"
+          MINOR="v$(echo "$VERSION" | cut -d. -f1,2)"
+          PATCH="v${VERSION}"
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -f "$MAJOR"
+          git tag -f "$PATCH"
           git tag -f "$MINOR"
-          git push origin "$MAJOR" --force
+          git tag -f "$MAJOR"
+          git push origin "$PATCH" --force
           git push origin "$MINOR" --force
+          git push origin "$MAJOR" --force

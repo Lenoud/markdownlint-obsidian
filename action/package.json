@@ -3,8 +3,9 @@
   "version": "0.8.0",
   "private": true,
   "description": "GitHub Action wrapper for markdownlint-obsidian",
+  "type": "module",
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --platform=node --target=node20 --format=cjs --main-fields=module,main --outfile=dist/main.js"
+    "build": "esbuild src/main.ts --bundle --platform=node --target=node20 --format=esm --main-fields=module,main --banner:js=\"import { createRequire as __actionCreateRequire } from 'node:module'; const require = __actionCreateRequire(import.meta.url);\" --outfile=dist/main.js"
   },
   "dependencies": {
     "@actions/core": "^1.10.0",

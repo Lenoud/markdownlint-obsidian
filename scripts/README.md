@@ -7,7 +7,7 @@ they are not part of the shipped npm packages.
 
 | Script | When it runs | Purpose |
 | :--- | :--- | :--- |
-| `prepare-publish.mjs` | Manual, before `npm publish` | Rewrites `workspace:*` deps to real semver ranges in the package's `dist/package.json` so npm consumers get pinned versions rather than workspace-local references |
+| `prepare-publish.mjs` | Manual, before `npm publish` | Rewrites `workspace:*` deps to real semver ranges in the selected package's `package.json` so npm consumers get pinned versions rather than workspace-local references |
 
 ## Adding a script
 

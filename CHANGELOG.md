@@ -13,6 +13,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- OFM rules in files with frontmatter now report file-absolute line numbers,
+  and their autofixes target the correct body line instead of the frontmatter
+  delimiter. Previously OFM diagnostics and fixes used body-relative offsets
+  while `FixUseCase` applied them to the full file, so `--fix` could edit the
+  wrong line (or the frontmatter) whenever a document had frontmatter.
+- An empty frontmatter block (`---\n---`) is now treated as present rather than
+  as no frontmatter, so the delimiter lines are no longer linted as body and
+  line offsets stay correct.
+- `fix` / `fix-check` now rebuild the `BlockRefIndex` before the final pass
+  after writes (using the in-memory writer for `--fix-check`), so cross-file
+  block-link rules (OFM102) no longer report stale false positives/negatives
+  after OFM104 rewrites a block id.
+- Per-rule `severity` overrides from config are now honoured when emitting
+  diagnostics (affecting formatter level and CLI exit code).
+- `ConfigLoader` now parses `.yaml` / `.yml` config files as YAML, reports a
+  clear `OFM901` error (with the file path) for malformed config files instead
+  of silently ignoring them, loads an explicit `--config <file>` of any
+  basename, deep-merges nested option blocks (`callouts`, `embeds`,
+  `frontmatter`, etc.) so partial overrides keep their defaults, and supports
+  `--config-pointer` JSON Pointer selection.
+- CLI now honours `outputFormatter` and `fix` from config when the matching
+  flag is omitted, makes `--no-globs` actually ignore config globs, surfaces
+  the underlying config-load error, and drops the unimplemented `--format`
+  flag.
+- Parser/rule boundary fixes: same-file wikilinks (`[[#Heading]]`,
+  `[[#^block]]`) are now represented and validated; multi-backtick inline code
+  spans are recognised so OFM syntax inside them is not extracted; Obsidian
+  comments inside fenced/inline code are skipped; empty highlights (`====`) are
+  detected by OFM124; `callouts.caseSensitive` is honoured; invalid block-id
+  candidates reach OFM100; and ISO date validation rejects impossible calendar
+  dates such as `2026-02-31`.
+
+### Changed
+
+- GitHub Action now sets `error-count`, `warning-count`, and `sarif-path`
+  outputs and implements `fail-on-warnings` (warnings fail the step only when
+  enabled). The action bundle is built as ESM and CI verifies it is committed
+  via `git diff --exit-code action/dist/main.js`.
+- `scripts/prepare-publish.mjs` rewrites scoped workspace dependencies as npm
+  aliases (`npm:@scope/pkg@^x.y.z`) so the published CLI's runtime imports keep
+  resolving. Action release tags advance `v1` / `v1.x` semver tags from CLI
+  releases; docs reference `@v1`.
+
 ## [1.1.0] - 2026-05-04
 
 ### Added
