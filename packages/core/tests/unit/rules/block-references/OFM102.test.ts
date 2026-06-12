@@ -40,6 +40,22 @@ describe("OFM102 broken-block-link", () => {
     expect(errors).toEqual([]);
   });
 
+  it("checks same-file block links against the current page", async () => {
+    const vault = stubVault(["current.md"]);
+    const blockRefs = makeBlockRefIndex(new Map([["current.md", new Set(["intro"])]]));
+    const errors = await runRuleOnSource(
+      OFM102Rule,
+      "See [[#^missing]]\nParagraph ^intro\n",
+      {},
+      vault,
+      undefined,
+      blockRefs,
+      "/v/current.md",
+    );
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.ruleCode).toBe("OFM102");
+  });
+
   it("ignores wikilinks without a block ref", async () => {
     const vault = stubVault(["notes/a.md"]);
     const blockRefs = makeBlockRefIndex(new Map([["notes/a.md", new Set(["intro"])]]));

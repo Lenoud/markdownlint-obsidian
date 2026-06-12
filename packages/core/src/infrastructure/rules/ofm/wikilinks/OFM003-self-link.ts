@@ -30,6 +30,7 @@ export const OFM003Rule: OFMRule = {
     const selfAbs = path.resolve(parsed.filePath);
     const selfStem = path.basename(parsed.filePath, path.extname(parsed.filePath));
     for (const link of parsed.wikilinks) {
+      if (link.target.length === 0) continue;
       const match = vault.resolve(link);
       if (match.kind !== "resolved") continue;
       if (match.path.absolute === selfAbs) {

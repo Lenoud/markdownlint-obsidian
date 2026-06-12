@@ -25,8 +25,10 @@ export interface WikilinkNode {
 }
 
 export function makeWikilinkNode(fields: WikilinkNode): WikilinkNode {
-  if (fields.target.length === 0) {
-    throw new Error("WikilinkNode.target must not be empty");
+  if (fields.target.length === 0 && fields.heading === null && fields.blockRef === null) {
+    throw new Error(
+      "WikilinkNode.target must not be empty unless a heading or block ref is present",
+    );
   }
   return Object.freeze({ ...fields });
 }

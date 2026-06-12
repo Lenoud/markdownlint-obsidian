@@ -19,6 +19,12 @@ describe("HighlightExtractor", () => {
     expect(out[0]?.text).toBe("important");
   });
 
+  it("extracts empty ==== spans", () => {
+    const out = run("plain ==== text");
+    expect(out).toHaveLength(1);
+    expect(out[0]?.text).toBe("");
+  });
+
   it("skips highlights inside code fences", () => {
     const out = run("```\n==ignored==\n```");
     expect(out).toHaveLength(0);

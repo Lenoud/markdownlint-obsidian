@@ -16,6 +16,12 @@ describe("OFM124 empty-highlight", () => {
     expect(errors[0]?.fixable).toBe(true);
   });
 
+  it("reports a delimiter-only highlight", async () => {
+    const errors = await runRuleOnSource(OFM124Rule, "prose ====\n");
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.ruleCode).toBe("OFM124");
+  });
+
   it("passes on a highlight with content", async () => {
     const errors = await runRuleOnSource(OFM124Rule, "prose ==real text==\n");
     expect(errors).toEqual([]);

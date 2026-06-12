@@ -20,6 +20,12 @@ describe("BlockRefExtractor", () => {
     expect(out[0]?.position.line).toBe(1);
   });
 
+  it("extracts invalid block reference candidates for OFM100", () => {
+    const out = run("some paragraph content ^bad_id");
+    expect(out).toHaveLength(1);
+    expect(out[0]?.blockId).toBe("bad_id");
+  });
+
   it("skips block refs inside code fences", () => {
     const out = run("```\nline ^inside\n```");
     expect(out).toHaveLength(0);

@@ -18,12 +18,18 @@ describe("isIsoDate", () => {
     expect(isIsoDate(input)).toBe(true);
   });
 
-  it.each(["2026/04/11", "04-11-2026", "not-a-date", "", "2026-13-40", "2026-04-11 12:00:00"])(
-    "rejects %s",
-    (input) => {
-      expect(isIsoDate(input)).toBe(false);
-    },
-  );
+  it.each([
+    "2026/04/11",
+    "04-11-2026",
+    "not-a-date",
+    "",
+    "2026-13-40",
+    "2026-02-31",
+    "2025-02-29",
+    "2026-04-11 12:00:00",
+  ])("rejects %s", (input) => {
+    expect(isIsoDate(input)).toBe(false);
+  });
 
   it.each([[null], [undefined], [42], [true], [[]], [{}]])("rejects non-string %s", (input) => {
     expect(isIsoDate(input)).toBe(false);

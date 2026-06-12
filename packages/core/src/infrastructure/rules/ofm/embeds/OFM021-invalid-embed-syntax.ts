@@ -8,6 +8,7 @@
  * @module infrastructure/rules/ofm/embeds/OFM021-invalid-embed-syntax
  */
 import type { OFMRule, OnErrorCallback } from "../../../../domain/linting/OFMRule.js";
+import { collectInlineCodeSpans, type InlineCodeSpan } from "../../../parser/ofm/CodeRegionMap.js";
 import { updateFence } from "../shared/fenceStateMachine.js";
 
 // Use `g` so matchAll can iterate over every occurrence on a single line.
@@ -15,38 +16,14 @@ const EMPTY_EMBED = /!\[\[\s*\]\]/g;
 // Detects an unclosed `![[` on a line that has no corresponding `]]`.
 const OPEN_BRACKETS = /!\[\[/;
 
-interface InlineSpan {
-  readonly start: number;
-  readonly end: number;
-}
-
-/**
- * Collect the column ranges covered by inline code spans (matched backtick
- * pairs) on a single line. Unbalanced backticks are ignored.
- */
-function computeInlineCodeSpans(line: string): readonly InlineSpan[] {
-  const spans: InlineSpan[] = [];
-  let open: number | null = null;
-  for (let col = 1; col <= line.length; col += 1) {
-    if (line.charAt(col - 1) !== "`") continue;
-    if (open === null) {
-      open = col;
-    } else {
-      spans.push({ start: open, end: col });
-      open = null;
-    }
-  }
-  return spans;
-}
-
-function isInsideSpan(column: number, spans: readonly InlineSpan[]): boolean {
+function isInsideSpan(column: number, spans: readonly InlineCodeSpan[]): boolean {
   return spans.some((s) => column >= s.start && column <= s.end);
 }
 
 function reportEmptyEmbeds(
   line: string,
   lineNumber: number,
-  spans: readonly InlineSpan[],
+  spans: readonly InlineCodeSpan[],
   onError: OnErrorCallback,
 ): void {
   for (const m of line.matchAll(EMPTY_EMBED)) {
@@ -63,7 +40,7 @@ function reportEmptyEmbeds(
 function reportUnclosedEmbed(
   line: string,
   lineNumber: number,
-  spans: readonly InlineSpan[],
+  spans: readonly InlineCodeSpan[],
   onError: OnErrorCallback,
 ): void {
   if (!OPEN_BRACKETS.test(line) || line.includes("]]")) return;
@@ -71,7 +48,7 @@ function reportUnclosedEmbed(
   if (isInsideSpan(column, spans)) return;
   onError({
     line: lineNumber,
-    column: 1,
+    column,
     message: "Unclosed embed — missing `]]`",
   });
 }
@@ -106,7 +83,7 @@ export const OFM021Rule: OFMRule = {
       const step = updateFence(line, fence);
       fence = step.fence;
       if (step.skip) return;
-      const spans = computeInlineCodeSpans(line);
+      const spans = collectInlineCodeSpans(line);
       reportEmptyEmbeds(line, i + 1, spans, onError);
       reportUnclosedEmbed(line, i + 1, spans, onError);
     });

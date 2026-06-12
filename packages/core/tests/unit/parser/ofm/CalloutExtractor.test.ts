@@ -22,6 +22,11 @@ describe("CalloutExtractor", () => {
     expect(out[0]?.foldable).toBe("none");
   });
 
+  it("preserves the source casing of the callout type", () => {
+    const out = run("> [!note] Heading");
+    expect(out[0]?.type).toBe("note");
+  });
+
   it("detects foldable + marker", () => {
     const out = run("> [!TIP]+ Title");
     expect(out[0]?.foldable).toBe("open");

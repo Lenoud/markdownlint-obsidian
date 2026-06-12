@@ -48,6 +48,26 @@ describe("WikilinkExtractor", () => {
     expect(out[0]?.target).toBe("outside");
   });
 
+  it("skips wikilinks inside multi-backtick inline code", () => {
+    const out = extract("`` [[in-code]] `` then [[outside]]");
+    expect(out).toHaveLength(1);
+    expect(out[0]?.target).toBe("outside");
+  });
+
+  it("keeps same-file heading links", () => {
+    const out = extract("See [[#Contents]]");
+    expect(out).toHaveLength(1);
+    expect(out[0]?.target).toBe("");
+    expect(out[0]?.heading).toBe("Contents");
+  });
+
+  it("keeps same-file block links", () => {
+    const out = extract("See [[#^intro]]");
+    expect(out).toHaveLength(1);
+    expect(out[0]?.target).toBe("");
+    expect(out[0]?.blockRef).toBe("intro");
+  });
+
   it("silently drops empty wikilinks — OFM002 handles [[]]", () => {
     const out = extract("[[]]");
     expect(out).toHaveLength(0);

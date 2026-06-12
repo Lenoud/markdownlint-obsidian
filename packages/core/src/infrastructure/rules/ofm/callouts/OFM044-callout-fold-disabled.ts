@@ -39,7 +39,7 @@ export const OFM044Rule: OFMRule = {
     if (config.callouts.allowFold) return;
     for (const callout of parsed.callouts) {
       if (callout.foldable === "none") continue;
-      if (!INFORMATIONAL.has(callout.type)) continue;
+      if (!INFORMATIONAL.has(callout.type.toUpperCase())) continue;
       const headerLine = parsed.lines[callout.position.line - 1] ?? "";
       onError({
         line: callout.position.line,

@@ -26,6 +26,13 @@ describe("CodeRegionMap", () => {
     expect(map.isInCode(1, 19)).toBe(false);
   });
 
+  it("marks multi-backtick inline code spans", () => {
+    const lines = ["Use `` [[ignored]] `` then [[real]]"];
+    const map = buildCodeRegionMap(lines);
+    expect(map.isInCode(1, lines[0]!.indexOf("[[ignored]]") + 1)).toBe(true);
+    expect(map.isInCode(1, lines[0]!.indexOf("[[real]]") + 1)).toBe(false);
+  });
+
   it("handles tilde fences", () => {
     const lines = ["~~~", "code", "~~~"];
     const map = buildCodeRegionMap(lines);

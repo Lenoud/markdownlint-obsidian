@@ -29,7 +29,7 @@ export const OFM001Rule: OFMRule = {
   run({ parsed, vault }, onError) {
     if (vault === null) return;
     for (const link of parsed.wikilinks) {
-      if (link.isEmbed) continue;
+      if (link.isEmbed || link.target.length === 0) continue;
       const match = vault.resolve(link);
       if (match.kind === "not-found") {
         onError({

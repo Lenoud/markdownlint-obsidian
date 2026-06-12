@@ -16,10 +16,18 @@ describe("BlockRefNode", () => {
     expect(Object.isFrozen(n)).toBe(true);
   });
 
-  it("rejects invalid block ids", () => {
+  it("allows syntactically invalid candidates so OFM100 can report them", () => {
+    const n = makeBlockRefNode({
+      blockId: "has_space",
+      position: { line: 1, column: 1 },
+    });
+    expect(n.blockId).toBe("has_space");
+  });
+
+  it("rejects empty block ids", () => {
     expect(() =>
       makeBlockRefNode({
-        blockId: "has space",
+        blockId: "",
         position: { line: 1, column: 1 },
       }),
     ).toThrow(/blockId/);

@@ -18,11 +18,9 @@ export interface BlockRefNode {
   readonly position: SourcePosition;
 }
 
-const BLOCK_ID_PATTERN = /^[A-Za-z0-9-]+$/;
-
 export function makeBlockRefNode(fields: BlockRefNode): BlockRefNode {
-  if (!BLOCK_ID_PATTERN.test(fields.blockId)) {
-    throw new Error(`BlockRefNode.blockId invalid: ${fields.blockId}`);
+  if (fields.blockId.length === 0) {
+    throw new Error("BlockRefNode.blockId must not be empty");
   }
   return Object.freeze({ ...fields });
 }

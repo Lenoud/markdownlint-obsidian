@@ -11,12 +11,16 @@
  */
 import { makeCommentNode, type CommentNode } from "../../../domain/parsing/CommentNode.js";
 import { makeSourcePosition } from "../../../domain/parsing/SourcePosition.js";
+import type { CodeRegionMap } from "./CodeRegionMap.js";
 
 /**
  * Extract %% ... %% comment regions. Multi-line comments are supported by
  * concatenating the raw text with \n.
  */
-export function extractComments(lines: readonly string[]): readonly CommentNode[] {
+export function extractComments(
+  lines: readonly string[],
+  codeMap?: CodeRegionMap,
+): readonly CommentNode[] {
   const raw = lines.join("\n");
   const out: CommentNode[] = [];
   let i = 0;
@@ -28,6 +32,10 @@ export function extractComments(lines: readonly string[]): readonly CommentNode[
 
     const startPos = offsetToPosition(raw, start);
     const endPos = offsetToPosition(raw, end + 1);
+    if (codeMap?.isInCode(startPos.line, startPos.column)) {
+      i = end + 2;
+      continue;
+    }
     out.push(
       makeCommentNode({
         text: raw.slice(start + 2, end),

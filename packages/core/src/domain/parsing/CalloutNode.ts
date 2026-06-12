@@ -11,7 +11,7 @@ import type { SourcePosition } from "./SourcePosition.js";
 
 /**
  * Obsidian admonition block: `> [!TYPE] Title` plus `> ` continuation lines.
- * `type` is stored uppercased; `title` is the trimmed text after the type tag.
+ * `type` preserves the source casing; `title` is the trimmed text after the type tag.
  */
 export interface CalloutNode {
   readonly type: string;

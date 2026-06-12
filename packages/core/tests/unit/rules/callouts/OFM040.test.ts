@@ -8,10 +8,13 @@ import { OFM040Rule } from "../../../../src/infrastructure/rules/ofm/callouts/OF
 import { runRuleOnSource } from "../helpers/runRuleOnSource.js";
 import { DEFAULT_CONFIG } from "../../../../src/infrastructure/config/defaults.js";
 
-const withAllowList = (list: readonly string[]): typeof DEFAULT_CONFIG =>
+const withAllowList = (
+  list: readonly string[],
+  caseSensitive = DEFAULT_CONFIG.callouts.caseSensitive,
+): typeof DEFAULT_CONFIG =>
   ({
     ...DEFAULT_CONFIG,
-    callouts: { ...DEFAULT_CONFIG.callouts, allowList: list },
+    callouts: { ...DEFAULT_CONFIG.callouts, allowList: list, caseSensitive },
   }) as typeof DEFAULT_CONFIG;
 
 describe("OFM040 unknown-callout-type", () => {
@@ -37,6 +40,15 @@ describe("OFM040 unknown-callout-type", () => {
   it("is case-insensitive by default (lower-case note)", async () => {
     const errors = await runRuleOnSource(OFM040Rule, "> [!note] Title\n> body\n");
     expect(errors).toEqual([]);
+  });
+
+  it("honors caseSensitive=true", async () => {
+    const errors = await runRuleOnSource(
+      OFM040Rule,
+      "> [!note] Title\n> body\n",
+      withAllowList(["NOTE"], true),
+    );
+    expect(errors).toHaveLength(1);
   });
 
   it("reports on the line the callout begins", async () => {

@@ -60,7 +60,7 @@ function scanCalloutAt(
 function parseHeader(line: string): ParsedHeader | null {
   const match = line.match(HEADER_PATTERN);
   if (match === null) return null;
-  const type = (match[1] ?? "").toUpperCase();
+  const type = match[1] ?? "";
   const marker = match[2];
   const foldable: CalloutNode["foldable"] =
     marker === "+" ? "open" : marker === "-" ? "closed" : "none";

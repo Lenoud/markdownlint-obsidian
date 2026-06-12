@@ -23,15 +23,18 @@ export interface CodeRegionMap {
 
 const FENCE_PATTERN = /^(\s*)(`{3,}|~{3,})/;
 
-interface InlineSpan {
-  readonly line: number;
+export interface InlineCodeSpan {
   readonly start: number;
   readonly end: number;
 }
 
+interface InlineRegionSpan extends InlineCodeSpan {
+  readonly line: number;
+}
+
 interface ScanState {
   readonly blockLines: Set<number>;
-  readonly inline: InlineSpan[];
+  readonly inline: InlineRegionSpan[];
   fence: string | null;
 }
 
@@ -73,15 +76,48 @@ function scanLine(line: string, lineNumber: number, state: ScanState): void {
   collectInlineSpans(line, lineNumber, state.inline);
 }
 
-function collectInlineSpans(line: string, lineNumber: number, out: InlineSpan[]): void {
-  let open: number | null = null;
-  for (let col = 1; col <= line.length; col += 1) {
-    if (line.charAt(col - 1) !== "`") continue;
-    if (open === null) {
-      open = col;
-    } else {
-      out.push({ line: lineNumber, start: open, end: col });
-      open = null;
-    }
+function collectInlineSpans(line: string, lineNumber: number, out: InlineRegionSpan[]): void {
+  for (const span of collectInlineCodeSpans(line)) {
+    out.push({ ...span, line: lineNumber });
   }
+}
+
+export function collectInlineCodeSpans(line: string): readonly InlineCodeSpan[] {
+  const spans: InlineCodeSpan[] = [];
+  let pos = 0;
+  while (pos < line.length) {
+    const open = nextBacktickRun(line, pos);
+    if (open === null) break;
+    const close = findClosingBacktickRun(line, open.end, open.length);
+    if (close === null) break;
+    spans.push({ start: open.start + 1, end: close.end });
+    pos = close.end;
+  }
+  return spans;
+}
+
+function nextBacktickRun(
+  line: string,
+  from: number,
+): { start: number; end: number; length: number } | null {
+  const start = line.indexOf("`", from);
+  if (start === -1) return null;
+  let end = start;
+  while (end < line.length && line.charAt(end) === "`") end += 1;
+  return { start, end, length: end - start };
+}
+
+function findClosingBacktickRun(
+  line: string,
+  from: number,
+  length: number,
+): { start: number; end: number } | null {
+  let pos = from;
+  while (pos < line.length) {
+    const run = nextBacktickRun(line, pos);
+    if (run === null) return null;
+    if (run.length === length) return { start: run.start, end: run.end };
+    pos = run.end;
+  }
+  return null;
 }

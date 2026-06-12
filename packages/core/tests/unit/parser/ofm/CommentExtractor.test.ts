@@ -5,9 +5,11 @@
  */
 import { describe, it, expect } from "bun:test";
 import { extractComments } from "../../../../src/infrastructure/parser/ofm/CommentExtractor.js";
+import { buildCodeRegionMap } from "../../../../src/infrastructure/parser/ofm/CodeRegionMap.js";
 
 function run(src: string): ReturnType<typeof extractComments> {
-  return extractComments(src.split("\n"));
+  const lines = src.split("\n");
+  return extractComments(lines, buildCodeRegionMap(lines));
 }
 
 describe("CommentExtractor", () => {
@@ -28,5 +30,17 @@ describe("CommentExtractor", () => {
   it("skips unclosed comments", () => {
     const out = run("start %%never closes");
     expect(out).toHaveLength(0);
+  });
+
+  it("skips comments inside code fences", () => {
+    const out = run("```\n%%ignored%%\n```\n%%real%%");
+    expect(out).toHaveLength(1);
+    expect(out[0]?.text).toBe("real");
+  });
+
+  it("skips comments inside inline code", () => {
+    const out = run("`%%ignored%%` then %%real%%");
+    expect(out).toHaveLength(1);
+    expect(out[0]?.text).toBe("real");
   });
 });

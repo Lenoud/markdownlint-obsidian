@@ -24,7 +24,7 @@ interface ParsedParts {
 /**
  * Extract every wikilink and embed from a Markdown file.
  * Skips any match whose opening `[[` falls inside a code region.
- * Empty targets are silently dropped — OFM002 detects `[[]]` separately.
+ * Empty targets are only kept for same-file heading/block links such as `[[#Heading]]`.
  */
 export function extractWikilinks(
   lines: readonly string[],
@@ -70,7 +70,7 @@ function buildNode(
   raw: string,
 ): WikilinkNode | null {
   const parts = splitParts(inner);
-  if (parts.target.length === 0) return null;
+  if (parts.target.length === 0 && parts.heading === null && parts.blockRef === null) return null;
   return makeWikilinkNode({
     target: parts.target,
     alias: parts.alias,

@@ -13,7 +13,7 @@ import { makeHighlightNode, type HighlightNode } from "../../../domain/parsing/H
 import { makeSourcePosition } from "../../../domain/parsing/SourcePosition.js";
 import type { CodeRegionMap } from "./CodeRegionMap.js";
 
-const HIGHLIGHT_PATTERN = /==([^=\n]+)==/g;
+const HIGHLIGHT_PATTERN = /==([^=\n]*)==/g;
 
 export function extractHighlights(
   lines: readonly string[],

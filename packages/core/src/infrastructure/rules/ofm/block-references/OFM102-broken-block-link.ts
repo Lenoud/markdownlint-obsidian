@@ -11,6 +11,8 @@
  * @module infrastructure/rules/ofm/block-references/OFM102-broken-block-link
  */
 import type { OFMRule } from "../../../../domain/linting/OFMRule.js";
+import type { VaultIndex } from "../../../../domain/vault/VaultIndex.js";
+import type { WikilinkNode } from "../../../../domain/parsing/WikilinkNode.js";
 
 /**
  * OFM102 — broken-block-link.
@@ -35,9 +37,9 @@ export const OFM102Rule: OFMRule = {
     if (vault === null || blockRefIndex === null) return;
     for (const link of parsed.wikilinks) {
       if (link.blockRef === null) continue;
-      const match = vault.resolve(link);
-      if (match.kind !== "resolved") continue;
-      if (!blockRefIndex.has(match.path.relative, link.blockRef)) {
+      const targetPage = resolveTargetPage(link, parsed.filePath, vault);
+      if (targetPage === null) continue;
+      if (!blockRefIndex.has(targetPage, link.blockRef)) {
         onError({
           line: link.position.line,
           column: link.position.column,
@@ -47,3 +49,15 @@ export const OFM102Rule: OFMRule = {
     }
   },
 };
+
+function resolveTargetPage(link: WikilinkNode, filePath: string, vault: VaultIndex): string | null {
+  if (link.target.length === 0) return toVaultRelative(filePath, vault);
+  const match = vault.resolve(link);
+  return match.kind === "resolved" ? match.path.relative : null;
+}
+
+function toVaultRelative(filePath: string, vault: VaultIndex): string {
+  if (!filePath.startsWith(vault.root)) return filePath;
+  const matched = vault.all().find((candidate) => candidate.absolute === filePath);
+  return matched?.relative ?? filePath;
+}

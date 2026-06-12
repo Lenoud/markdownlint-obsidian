@@ -9,6 +9,8 @@
  *
  * @module infrastructure/rules/ofm/shared/fenceStateMachine
  */
+import { collectInlineCodeSpans } from "../../../parser/ofm/CodeRegionMap.js";
+
 // Opening or closing fence line (```, ~~~, or longer). Matched against the
 // line's leading whitespace so indented fences still close properly.
 const FENCE_PATTERN = /^(\s*)(`{3,}|~{3,})/;
@@ -52,5 +54,11 @@ export function updateFence(line: string, fence: string | null): FenceResult {
  * documentation-style inline code such as `` `===` ``.
  */
 export function stripInlineCode(line: string): string {
-  return line.replace(/`[^`\n]*`/g, "");
+  const chars = [...line];
+  for (const span of collectInlineCodeSpans(line)) {
+    for (let col = span.start; col <= span.end; col += 1) {
+      chars[col - 1] = "";
+    }
+  }
+  return chars.join("");
 }

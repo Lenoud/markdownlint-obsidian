@@ -24,14 +24,32 @@
  * @param input - Candidate value (any type).
  * @returns true if `input` is a valid ISO-8601 date or `Date` instance.
  */
-const ISO_PATTERN = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{1,3})?(Z|[+-]\d{2}:\d{2})?)?$/;
+const ISO_PATTERN =
+  /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})?)?$/;
 
 export function isIsoDate(input: unknown): boolean {
   if (input instanceof Date) {
     return Number.isFinite(input.getTime());
   }
   if (typeof input !== "string") return false;
-  if (!ISO_PATTERN.test(input)) return false;
-  const ms = Date.parse(input);
-  return Number.isFinite(ms);
+  const match = input.match(ISO_PATTERN);
+  if (match === null) return false;
+  const [, rawYear, rawMonth, rawDay, rawHour, rawMinute, rawSecond] = match;
+  if (!isValidCalendarDate(Number(rawYear), Number(rawMonth), Number(rawDay))) return false;
+  if (rawHour === undefined) return true;
+  return isValidTime(Number(rawHour), Number(rawMinute), Number(rawSecond));
+}
+
+function isValidCalendarDate(year: number, month: number, day: number): boolean {
+  if (month < 1 || month > 12) return false;
+  const maxDay = daysInMonth(year, month);
+  return day >= 1 && day <= maxDay;
+}
+
+function daysInMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function isValidTime(hour: number, minute: number, second: number): boolean {
+  return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59 && second >= 0 && second <= 59;
 }

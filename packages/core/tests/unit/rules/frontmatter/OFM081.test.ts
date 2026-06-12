@@ -46,6 +46,16 @@ describe("OFM081 invalid-date-format", () => {
     expect(errors[0]?.message).toContain("created");
   });
 
+  it("fails when the date shape is ISO but the calendar date does not exist", async () => {
+    const errors = await runRuleOnSource(
+      OFM081Rule,
+      '---\ncreated: "2026-02-31"\n---\nbody',
+      withDateFields(["created"]),
+    );
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.ruleCode).toBe("OFM081");
+  });
+
   it("skips missing date fields (OFM080's job)", async () => {
     const errors = await runRuleOnSource(
       OFM081Rule,

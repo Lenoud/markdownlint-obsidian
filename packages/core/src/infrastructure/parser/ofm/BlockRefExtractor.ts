@@ -13,7 +13,7 @@ import { makeBlockRefNode, type BlockRefNode } from "../../../domain/parsing/Blo
 import { makeSourcePosition } from "../../../domain/parsing/SourcePosition.js";
 import type { CodeRegionMap } from "./CodeRegionMap.js";
 
-const BLOCK_REF_PATTERN = /(?:^|\s)\^([A-Za-z0-9-]+)\s*$/;
+const BLOCK_REF_PATTERN = /(?:^|\s)\^([^\s^]+)\s*$/;
 
 export function extractBlockRefs(
   lines: readonly string[],

@@ -20,6 +20,12 @@ describe("OFM100 invalid-block-ref", () => {
     expect(errors).toEqual([]);
   });
 
+  it("flags invalid characters captured by the parser", async () => {
+    const errors = await runRuleOnSource(OFM100Rule, "Paragraph ^bad_id\n");
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.message).toMatch(/\^bad_id/);
+  });
+
   it("respects a custom pattern that forbids uppercase", async () => {
     const errors = await runRuleOnSource(OFM100Rule, "Paragraph ^ABC\n", {
       blockRefs: { idPattern: "^[a-z-]+$", requireUnique: true },
