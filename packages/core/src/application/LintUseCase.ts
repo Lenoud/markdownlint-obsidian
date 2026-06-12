@@ -10,6 +10,7 @@
  * @module application/LintUseCase
  */
 import type { LinterConfig } from "../domain/config/LinterConfig.js";
+import type { RuleConfig } from "../domain/config/RuleConfig.js";
 import type { LintError } from "../domain/linting/LintError.js";
 import { makeLintError } from "../domain/linting/LintError.js";
 import { makeLintResult, type LintResult } from "../domain/linting/LintResult.js";
@@ -81,14 +82,16 @@ export async function runLint(
   return results;
 }
 
+function getRuleConfig(rule: OFMRule, config: LinterConfig): RuleConfig | undefined {
+  for (const name of rule.names) {
+    const cfg = config.rules[name];
+    if (cfg !== undefined) return cfg;
+  }
+  return undefined;
+}
+
 function iterateActiveRules(registry: RuleRegistry, config: LinterConfig): readonly OFMRule[] {
-  return registry.all().filter((rule) => {
-    for (const name of rule.names) {
-      const cfg = config.rules[name];
-      if (cfg !== undefined) return cfg.enabled;
-    }
-    return true;
-  });
+  return registry.all().filter((rule) => getRuleConfig(rule, config)?.enabled ?? true);
 }
 
 async function runRule(
@@ -100,6 +103,8 @@ async function runRule(
   fsCheck: FileExistenceChecker,
   errors: LintError[],
 ): Promise<void> {
+  const ruleConfig = getRuleConfig(rule, config);
+  const severity = ruleConfig?.severity ?? rule.severity;
   await rule.run(
     { filePath: parsed.filePath, parsed, config, vault, fsCheck, blockRefIndex },
     (partial) => {
@@ -108,16 +113,35 @@ async function runRule(
         makeLintError({
           ruleCode: rule.names[0] ?? "UNKNOWN",
           ruleName: rule.names[1] ?? rule.names[0] ?? "unknown",
-          severity: rule.severity,
-          line: partial.line,
+          severity,
+          line: toFileLine(partial.line, parsed, rule),
           column: partial.column,
           message: partial.message,
           fixable: rule.fixable,
-          ...(partial.fix !== undefined ? { fix: partial.fix } : {}),
+          ...(partial.fix !== undefined ? { fix: toFileFix(partial.fix, parsed, rule) } : {}),
         }),
       );
     },
   );
+}
+
+function emitsFileRelativeLines(rule: OFMRule): boolean {
+  return rule.tags.includes("markdownlint") || rule.tags.includes("frontmatter");
+}
+
+function toFileLine(bodyLine: number, parsed: ParseResult, rule: OFMRule): number {
+  return emitsFileRelativeLines(rule) ? bodyLine : bodyLine + parsed.frontmatterEndLine;
+}
+
+function toFileFix(
+  fix: NonNullable<LintError["fix"]>,
+  parsed: ParseResult,
+  rule: OFMRule,
+): NonNullable<LintError["fix"]> {
+  return {
+    ...fix,
+    lineNumber: toFileLine(fix.lineNumber, parsed, rule),
+  };
 }
 
 function buildParserError(err: unknown): LintError {

@@ -65,6 +65,70 @@ describe("engine.fix()", () => {
     }
   });
 
+  it("applies OFM fixes after frontmatter to the body line", async () => {
+    const tmpDir = await makeTmpVault();
+    try {
+      const original = ["---", "title: test", "---", "", "#project/", ""].join("\n");
+      const expected = original.replace("#project/", "#project");
+      const filePath = path.join(tmpDir, "file.md");
+      await fs.writeFile(filePath, original);
+
+      const outcome = await fix({ globs: ["file.md"], cwd: tmpDir });
+
+      expect(outcome.filesFixed).toContain(filePath);
+      expect(await fs.readFile(filePath, "utf8")).toBe(expected);
+      expect(outcome.firstPass[0]!.errors.find((error) => error.ruleCode === "OFM063")?.line).toBe(
+        5,
+      );
+      expect(outcome.finalPass[0]!.errors.some((error) => error.ruleCode === "OFM063")).toBe(false);
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it("refreshes block reference indexes before the final pass after writing fixes", async () => {
+    const tmpDir = await makeTmpVault();
+    try {
+      const targetPath = path.join(tmpDir, "target.md");
+      await fs.writeFile(targetPath, "Paragraph ^Foo\n");
+      await fs.writeFile(path.join(tmpDir, "source.md"), "See [[target#^foo]]\n");
+
+      const outcome = await fix({ globs: ["**/*.md"], cwd: tmpDir });
+
+      expect(outcome.filesFixed).toContain(targetPath);
+      expect(await fs.readFile(targetPath, "utf8")).toBe("Paragraph ^foo\n");
+      expect(
+        outcome.finalPass
+          .flatMap((result) => result.errors)
+          .some((error) => error.ruleCode === "OFM102"),
+      ).toBe(false);
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it("refreshes block reference indexes from hypothetical check=true writes", async () => {
+    const tmpDir = await makeTmpVault();
+    try {
+      const targetPath = path.join(tmpDir, "target.md");
+      const original = "Paragraph ^Foo\n";
+      await fs.writeFile(targetPath, original);
+      await fs.writeFile(path.join(tmpDir, "source.md"), "See [[target#^foo]]\n");
+
+      const outcome = await fix({ globs: ["**/*.md"], cwd: tmpDir, check: true });
+
+      expect(outcome.filesFixed).toContain(targetPath);
+      expect(await fs.readFile(targetPath, "utf8")).toBe(original);
+      expect(
+        outcome.finalPass
+          .flatMap((result) => result.errors)
+          .some((error) => error.ruleCode === "OFM102"),
+      ).toBe(false);
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
   it("applies MD029 ordered-list fixes after fenced code without corrupting the fence", async () => {
     const tmpDir = await makeTmpVault();
     try {

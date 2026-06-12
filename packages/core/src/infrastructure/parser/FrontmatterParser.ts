@@ -14,6 +14,8 @@ import matter from "gray-matter";
 export interface FrontmatterParseOutput {
   readonly data: Readonly<Record<string, unknown>>;
   readonly rawFrontmatter: string | null;
+  /** Markdown body with any frontmatter delimiter block removed. */
+  readonly body: string;
   /** 1-based line number where the body begins (after closing `---`). */
   readonly bodyStartLine: number;
 }
@@ -40,19 +42,27 @@ function parseInternal(source: string): FrontmatterParseOutput {
   const options = { cache: false } as unknown as Parameters<typeof matter>[1];
   const parsed = matter({ content: source }, options);
   const data = (parsed.data ?? {}) as Record<string, unknown>;
-  const rawFrontmatter = normalizeMatter(parsed.matter);
-  const bodyStartLine = rawFrontmatter === null ? 1 : countLines(rawFrontmatter) + 3;
-  return { data, rawFrontmatter, bodyStartLine };
+  const hasFrontmatter = hasDelimitedYamlFrontmatter(source);
+  const rawFrontmatter = hasFrontmatter ? normalizeMatter(parsed.matter) : null;
+  const body = hasFrontmatter ? parsed.content : source;
+  const bodyStartLine = hasFrontmatter ? sourceLineCountBeforeBody(source, body) + 1 : 1;
+  return { data, rawFrontmatter, body, bodyStartLine };
 }
 
 function normalizeMatter(rawMatter: string | undefined): string | null {
   const value = rawMatter ?? "";
   // gray-matter's `matter` field is typically prefixed with a leading newline.
-  const trimmed = value.startsWith("\n") ? value.slice(1) : value;
-  return trimmed.length > 0 ? trimmed : null;
+  return value.startsWith("\n") ? value.slice(1) : value;
 }
 
-function countLines(text: string): number {
-  if (text.length === 0) return 0;
-  return text.split(/\r?\n/).length;
+function hasDelimitedYamlFrontmatter(source: string): boolean {
+  return /^---\r?\n(?:[\s\S]*?\r?\n)?---[ \t]*(?:\r?\n|$)/.test(source);
+}
+
+function sourceLineCountBeforeBody(source: string, body: string): number {
+  const bodyStartOffset = source.length - body.length;
+  if (bodyStartOffset <= 0) return 0;
+  const prefix = source.slice(0, bodyStartOffset);
+  const parts = prefix.split(/\r?\n/);
+  return parts.at(-1) === "" ? parts.length - 1 : parts.length;
 }

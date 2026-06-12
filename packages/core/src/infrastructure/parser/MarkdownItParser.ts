@@ -37,8 +37,7 @@ export function makeMarkdownItParser(): Parser {
 }
 
 function parseOne(md: MarkdownIt, filePath: string, content: string): ParseResult {
-  const { data, rawFrontmatter, bodyStartLine } = parseFrontmatter(content);
-  const body = rawFrontmatter === null ? content : stripFrontmatter(content);
+  const { data, rawFrontmatter, body, bodyStartLine } = parseFrontmatter(content);
   const lines = body.split(/\r?\n/);
   const codeMap = buildCodeRegionMap(lines);
   const wikilinks = extractWikilinks(lines, codeMap);
@@ -56,13 +55,8 @@ function parseOne(md: MarkdownIt, filePath: string, content: string): ParseResul
     tags: extractTags(lines, codeMap),
     blockRefs: extractBlockRefs(lines, codeMap),
     highlights: extractHighlights(lines, codeMap),
-    comments: extractComments(lines),
+    comments: extractComments(lines, codeMap),
     raw: body,
     lines,
   });
-}
-
-function stripFrontmatter(content: string): string {
-  const match = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
-  return match === null ? content : content.slice(match[0].length);
 }

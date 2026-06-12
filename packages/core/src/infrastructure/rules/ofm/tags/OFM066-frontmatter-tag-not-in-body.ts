@@ -23,7 +23,7 @@ import type { OFMRule } from "../../../../domain/linting/OFMRule.js";
 export const OFM066Rule: OFMRule = {
   names: ["OFM066", "frontmatter-tag-not-in-body"],
   description: "Tag declared in frontmatter is never used in the body",
-  tags: ["tags", "style"],
+  tags: ["tags", "frontmatter", "style"],
   severity: "warning",
   fixable: false,
   run({ parsed }, onError) {

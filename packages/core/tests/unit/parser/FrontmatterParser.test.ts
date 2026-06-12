@@ -18,8 +18,17 @@ describe("FrontmatterParser", () => {
   it("returns empty data for no frontmatter", () => {
     const r = parseFrontmatter("# Hello");
     expect(r.data).toEqual({});
+    expect(r.body).toBe("# Hello");
     expect(r.bodyStartLine).toBe(1);
     expect(r.rawFrontmatter).toBeNull();
+  });
+
+  it("treats an empty frontmatter block as present", () => {
+    const r = parseFrontmatter("---\n---\n# Hello\n");
+    expect(r.data).toEqual({});
+    expect(r.body).toBe("# Hello\n");
+    expect(r.bodyStartLine).toBe(3);
+    expect(r.rawFrontmatter).toBe("");
   });
 
   it("throws tagged OFM902 on malformed YAML", () => {

@@ -14,9 +14,20 @@ describe("MarkdownItParser", () => {
     const r = parser.parse("notes/index.md", src);
     expect(r.filePath).toBe("notes/index.md");
     expect(r.frontmatter).toEqual({ tags: ["a"] });
+    expect(r.frontmatterEndLine).toBe(3);
+    expect(r.raw).toBe("# Hi\n[[page]]");
     expect(r.wikilinks).toHaveLength(1);
     expect(r.wikilinks[0]?.target).toBe("page");
     expect(r.lines.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("strips empty frontmatter blocks from the parsed body", () => {
+    const r = parser.parse("notes/index.md", "---\n---\n# Hi\n");
+    expect(r.frontmatter).toEqual({});
+    expect(r.frontmatterRaw).toBe("");
+    expect(r.frontmatterEndLine).toBe(2);
+    expect(r.raw).toBe("# Hi\n");
+    expect(r.lines[0]).toBe("# Hi");
   });
 
   it("collects every OFM node type", () => {

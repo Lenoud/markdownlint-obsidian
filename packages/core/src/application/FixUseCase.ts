@@ -20,6 +20,7 @@ import type { FixConflict } from "../domain/linting/FixConflict.js";
 
 export interface FixDependencies extends LintDependencies {
   readonly writeFile: (absolute: string, content: string) => Promise<void>;
+  readonly refreshAfterFixes?: () => Promise<Partial<LintDependencies>>;
 }
 
 export interface FixOutcome {
@@ -57,6 +58,15 @@ export async function runFix(
     }
   }
 
-  const finalPass = await runLint(filePaths, config, registry, deps);
+  const finalDeps = await refreshDependenciesAfterFixes(deps, fixed.length > 0);
+  const finalPass = await runLint(filePaths, config, registry, finalDeps);
   return { firstPass, finalPass, filesFixed: fixed, conflicts: allConflicts };
+}
+
+async function refreshDependenciesAfterFixes(
+  deps: FixDependencies,
+  didFix: boolean,
+): Promise<LintDependencies> {
+  if (!didFix || deps.refreshAfterFixes === undefined) return deps;
+  return { ...deps, ...(await deps.refreshAfterFixes()) };
 }

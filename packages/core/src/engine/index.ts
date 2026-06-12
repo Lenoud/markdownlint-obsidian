@@ -16,8 +16,8 @@ import { makeMarkdownItParser } from "../infrastructure/parser/MarkdownItParser.
 import { readMarkdownFile } from "../infrastructure/io/FileReader.js";
 import { writeMarkdownFile } from "../infrastructure/io/FileWriter.js";
 import { makeRuleRegistry } from "../domain/linting/RuleRegistry.js";
-import { runLint } from "../application/LintUseCase.js";
-import { runFix as runFixUseCase } from "../application/FixUseCase.js";
+import { runLint, type LintDependencies } from "../application/LintUseCase.js";
+import { runFix as runFixUseCase, type FixDependencies } from "../application/FixUseCase.js";
 import { bootstrapVault } from "../application/VaultBootstrap.js";
 import { makeNodeFsVaultDetector } from "../infrastructure/vault/NodeFsVaultDetector.js";
 import { buildFileIndex } from "../infrastructure/vault/FileIndexBuilder.js";
@@ -51,6 +51,8 @@ export interface LintOptions {
   readonly vaultRoot?: string;
   /** Explicit path to a config file directory. Defaults to `cwd`. */
   readonly config?: string;
+  /** JSON Pointer selecting a nested config object from the loaded config file(s). */
+  readonly configPointer?: string;
   /** Disable wikilink resolution. Defaults to true (from config). */
   readonly resolve?: boolean;
   /** Working directory for config discovery, vault detection, and glob resolution. Defaults to cwd. */
@@ -63,6 +65,8 @@ export interface LintOptions {
    * @param message    - Human-readable error description.
    */
   readonly onCustomRuleError?: (modulePath: string, message: string) => void;
+  /** If false, do not fall back to config.globs when no explicit globs are supplied. */
+  readonly useConfigGlobs?: boolean;
 }
 
 /**
@@ -153,21 +157,23 @@ async function discoverConfiguredFiles(
   config: LinterConfig,
   cwd: string,
 ): Promise<string[]> {
-  const effectiveGlobs = options.globs.length > 0 ? options.globs : config.globs;
+  const effectiveGlobs =
+    options.globs.length > 0 ? options.globs : options.useConfigGlobs === false ? [] : config.globs;
+  if (effectiveGlobs.length === 0) return [];
   return discoverFilesRaw(effectiveGlobs, config.ignores, globBaseDir(config, cwd));
 }
 
-async function tryBootstrapVault(
+async function tryBootstrapVaultWithReader(
   cwd: string,
   config: LinterConfig,
   parser: Parser,
+  readFile: (absolute: string) => Promise<string>,
 ): Promise<VaultContext> {
   try {
     const result = await bootstrapVault(cwd, config, {
       detector: makeNodeFsVaultDetector(),
       buildIndex: buildFileIndex,
-      buildBlockRefIndex: (files) =>
-        buildBlockRefIndex(files, { parser, readFile: readMarkdownFile }),
+      buildBlockRefIndex: (files) => buildBlockRefIndex(files, { parser, readFile }),
     });
     return toVaultContext(result);
   } catch (err) {
@@ -177,6 +183,14 @@ async function tryBootstrapVault(
     if (msg.startsWith("OFM9")) throw err;
     return { vault: null, blockRefIndex: null };
   }
+}
+
+async function tryBootstrapVault(
+  cwd: string,
+  config: LinterConfig,
+  parser: Parser,
+): Promise<VaultContext> {
+  return tryBootstrapVaultWithReader(cwd, config, parser, readMarkdownFile);
 }
 
 // ---------------------------------------------------------------------------
@@ -194,7 +208,7 @@ async function tryBootstrapVault(
  */
 export async function lint(options: LintOptions): Promise<LintResult[]> {
   const cwd = options.cwd ?? process.cwd();
-  const config = await loadConfig(options.config ?? cwd);
+  const config = await loadConfig(options.config ?? cwd, options.configPointer);
   const effectiveConfig = normalizeEffectiveConfig(config, options, cwd);
 
   const filePaths = await discoverConfiguredFiles(options, effectiveConfig, cwd);
@@ -225,7 +239,7 @@ export async function lint(options: LintOptions): Promise<LintResult[]> {
  */
 export async function fix(options: FixOptions): Promise<FixOutcome> {
   const cwd = options.cwd ?? process.cwd();
-  const config = await loadConfig(options.config ?? cwd);
+  const config = await loadConfig(options.config ?? cwd, options.configPointer);
   const effectiveConfig = normalizeEffectiveConfig(config, options, cwd);
 
   const filePaths = await discoverConfiguredFiles(options, effectiveConfig, cwd);
@@ -238,16 +252,30 @@ export async function fix(options: FixOptions): Promise<FixOutcome> {
   const { vault, blockRefIndex } = await tryBootstrapVault(cwd, effectiveConfig, parser);
 
   const io = buildFixIo(options.check);
-  const deps = {
+  const deps = buildFixDependencies(cwd, effectiveConfig, parser, { vault, blockRefIndex }, io);
+
+  return runFixUseCase(filePaths, effectiveConfig, registry, deps);
+}
+
+function buildFixDependencies(
+  cwd: string,
+  config: LinterConfig,
+  parser: Parser,
+  context: VaultContext,
+  io: FixIo,
+): FixDependencies {
+  return {
     parser,
     readFile: io.readFile,
     writeFile: io.writeFile,
-    vault,
-    blockRefIndex,
+    vault: context.vault,
+    blockRefIndex: context.blockRefIndex,
     fsCheck: makeNodeFsExistenceChecker(),
+    refreshAfterFixes: async (): Promise<Partial<LintDependencies>> => {
+      const refreshed = await tryBootstrapVaultWithReader(cwd, config, parser, io.readFile);
+      return { blockRefIndex: refreshed.blockRefIndex };
+    },
   };
-
-  return runFixUseCase(filePaths, effectiveConfig, registry, deps);
 }
 
 // Ensure node:fs/promises is available in this module's environment
